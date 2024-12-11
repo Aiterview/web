@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 const InterviewQuestions = ({

@@ -1,7 +1,11 @@
-import React from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { handleAuthRedirect } from '../../utils/handleAuthRedirect';
+import { useNavigate } from 'react-router-dom';
 
-const HeroSection = ({ onStart }: { onStart: () => void }) => {
+const HeroSection = () => {
+  const navigate = useNavigate();
+  const isLoggedIn = true;
+
   return (
     <div className="relative pt-20 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50" />
@@ -31,7 +35,7 @@ const HeroSection = ({ onStart }: { onStart: () => void }) => {
             </p>
             
             <div className="flex items-center space-x-6">
-              <button onClick={onStart} className="button-primary group">
+              <button className="button-primary group" onClick={() => handleAuthRedirect(isLoggedIn, navigate)}>
                 <span className="flex items-center">
                   Get Started Free
                   <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />

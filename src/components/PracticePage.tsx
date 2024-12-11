@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import JobTypeStep from './steps/JobTypeStep';
 import RequirementsStep from './steps/RequirementsStep';
 import QuestionsStep from './steps/QuestionsStep';

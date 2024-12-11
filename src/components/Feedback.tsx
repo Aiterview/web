@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 
 const Feedback = ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   answers,
   onRetake,
 }: {

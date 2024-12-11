@@ -1,7 +1,6 @@
-import React from 'react';
 import { BrainCog, Twitter, Linkedin, Github } from 'lucide-react';
 
-const Footer = ({ onStart }: { onStart: () => void }) => {
+const Footer = () => {
   return (
     <footer className="bg-gray-50">
       <div className="container mx-auto px-4 py-12">
@@ -61,6 +60,7 @@ const Footer = ({ onStart }: { onStart: () => void }) => {
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SocialLink = ({ href, icon: Icon }: { href: string; icon: any }) => (
   <a
     href={href}
