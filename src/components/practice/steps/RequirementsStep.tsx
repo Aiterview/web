@@ -1,7 +1,13 @@
-import React from 'react';
 import { ArrowLeft, ArrowRight, FileText } from 'lucide-react';
 
-const RequirementsStep = ({ requirements, setRequirements, onNext, onBack }) => {
+interface RequirementsStepProps {
+  requirements: string;
+  setRequirements: (requirements: string) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+
+const RequirementsStep: React.FC<RequirementsStepProps> = ({ requirements, setRequirements, onNext, onBack }) => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">

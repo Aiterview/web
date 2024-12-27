@@ -1,7 +1,14 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { ArrowLeft, ArrowRight, MessageSquare } from 'lucide-react';
 
-const QuestionsStep = ({ questions, setQuestions, onNext, onBack }) => {
+interface QuestionsStepProps {
+  questions: string[];
+  setQuestions: (questions: string[]) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+
+const QuestionsStep: React.FC<QuestionsStepProps> = ({ questions, setQuestions, onNext, onBack }) => {
   useEffect(() => {
     if (questions.length === 0) {
       setQuestions([

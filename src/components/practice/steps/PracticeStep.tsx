@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Mic, Headphones } from 'lucide-react';
 
-const PracticeStep = ({ questions, answers, setAnswers, onNext, onBack }) => {
+interface PracticeStepProps {
+  questions: string[];
+  answers: Record<string, string>;
+  setAnswers: (answers: Record<string, string>) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+
+const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnswers, onNext, onBack }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);

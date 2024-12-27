@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { Code, Palette, TestTube, ArrowRight, ArrowLeft, Brain, Sparkles } from 'lucide-react';
 
-const JobTypeStep = ({ jobType, setJobType, onNext, onBack }) => {
+interface JobTypeStepProps {
+  jobType: string;
+  setJobType: (type: string) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+
+const JobTypeStep: React.FC<JobTypeStepProps> = ({ jobType, setJobType, onNext, onBack }) => {
   const [customJob, setCustomJob] = useState('');
 
   const handleJobSelect = (selectedJob: string) => {
