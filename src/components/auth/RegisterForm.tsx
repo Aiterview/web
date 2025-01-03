@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  User, 
+  //User, 
   Mail, 
   Lock, 
   Github, 
@@ -9,30 +9,47 @@ import {
 import FormInput from './components/FormInput';
 import SocialButton from './components/SocialButton';
 import AuthDivider from './components/AuthDivider';
+import { register } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterForm = () => {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle registration logic here
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError('');
+      setIsLoading(true);
+  
+      try {
+        await register({ email, password });
+        
+        //localStorage.setItem('token', response.data.token);
+        
+        navigate('/dashboard');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        setError(
+          err.response?.data?.message || 
+          'An error occurred during login. Please try again.'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <FormInput
-          id="register-name"
-          type="text"
-          label="Full Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="John Doe"
-          icon={User}
-        />
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700">
+          <p>{error}</p>
+        </div>
+      )}
 
+      <div className="space-y-4">
         <FormInput
           id="register-email"
           type="email"
@@ -85,7 +102,7 @@ const RegisterForm = () => {
                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                  transform hover:scale-[1.02] active:scale-[0.98]"
       >
-        Create Account
+        {isLoading ? 'Creating Account...' : 'Create Account'}
       </button>
 
       <AuthDivider text="Or sign up with" />

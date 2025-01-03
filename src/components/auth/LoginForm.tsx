@@ -8,18 +8,47 @@ import {
 import FormInput from './components/FormInput';
 import SocialButton from './components/SocialButton';
 import AuthDivider from './components/AuthDivider';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../../services/api';
 
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await login({ email, password });
+      
+      localStorage.setItem('token', response.data.token);
+      
+      navigate('/dashboard');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || 
+        'An error occurred during login. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700">
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="space-y-4">
         <FormInput
           id="login-email"
@@ -29,6 +58,7 @@ const LoginForm = () => {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           icon={Mail}
+          required
         />
 
         <FormInput
@@ -39,6 +69,7 @@ const LoginForm = () => {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
           icon={Lock}
+          required
         />
       </div>
 
@@ -65,13 +96,17 @@ const LoginForm = () => {
                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                  transform hover:scale-[1.02] active:scale-[0.98]"
       >
-        Sign In
+        {isLoading ? 'Signing in...' : 'Sign In'}
       </button>
 
       <AuthDivider text="Or continue with" />
 
       <div className="grid place-items-center"> {/** grid-cols-2 gap-4 */}
-        <SocialButton icon={Github} label="GitHub" />
+      <SocialButton 
+          icon={Github} 
+          label="GitHub" 
+          //onClick={}
+        />
         {/* <SocialButton icon={Linkedin} label="LinkedIn" /> */}
       </div>
     </form>
