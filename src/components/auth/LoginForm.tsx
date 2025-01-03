@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Github, Linkedin } from 'lucide-react';
+import { 
+  Mail, 
+  Lock, 
+  Github, 
+  // Linkedin 
+} from 'lucide-react';
 import FormInput from './components/FormInput';
 import SocialButton from './components/SocialButton';
 import AuthDivider from './components/AuthDivider';
@@ -65,9 +70,9 @@ const LoginForm = () => {
 
       <AuthDivider text="Or continue with" />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid place-items-center"> {/** grid-cols-2 gap-4 */}
         <SocialButton icon={Github} label="GitHub" />
-        <SocialButton icon={Linkedin} label="LinkedIn" />
+        {/* <SocialButton icon={Linkedin} label="LinkedIn" /> */}
       </div>
     </form>
   );

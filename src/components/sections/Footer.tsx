@@ -1,4 +1,9 @@
-import { BrainCog, Twitter, Linkedin, Github } from 'lucide-react';
+import { 
+  BrainCog, 
+  //Twitter, 
+  Linkedin, 
+  //Github 
+} from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -14,9 +19,9 @@ const Footer = () => {
               Practice your interview skills and get better at landing your dream job.
             </p>
             <div className="flex space-x-4">
-              <SocialLink href="#" icon={Twitter} />
+              {/* <SocialLink href="#" icon={Twitter} /> */}
               <SocialLink href="#" icon={Linkedin} />
-              <SocialLink href="#" icon={Github} />
+              {/* <SocialLink href="#" icon={Github} /> */}
             </div>
           </div>
 
@@ -27,7 +32,7 @@ const Footer = () => {
             />
           </div>
 
-          <div>
+          {/* <div>
             <h3 className="font-semibold text-gray-800 mb-4">Resources</h3>
             <FooterLinks
               links={['Blog', 'Help Center', 'Documentation', 'API']}
@@ -39,7 +44,7 @@ const Footer = () => {
             <FooterLinks
               links={['About', 'Careers', 'Contact', 'Press']}
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">

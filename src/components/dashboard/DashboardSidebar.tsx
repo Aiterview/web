@@ -2,9 +2,9 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   User, 
-  Calendar, 
-  Clock,
-  Star,
+  //Calendar, 
+  //Clock,
+  //Star,
   CreditCard,
   Settings,
   HelpCircle
@@ -12,11 +12,11 @@ import {
 
 const DashboardSidebar = () => {
   const navItems = [
-    { icon: LayoutDashboard, label: 'Overview', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Start Practice', path: '/dashboard' },
     { icon: User, label: 'Profile', path: '/dashboard/profile' },
-    { icon: Calendar, label: 'Practice Sessions', path: '/dashboard/sessions' },
-    { icon: Clock, label: 'History', path: '/dashboard/history' },
-    { icon: Star, label: 'Saved Questions', path: '/dashboard/saved' },
+    //{ icon: Calendar, label: 'Practice Sessions', path: '/dashboard/sessions' },
+    //{ icon: Clock, label: 'History', path: '/dashboard/history' },
+    //{ icon: Star, label: 'Saved Questions', path: '/dashboard/saved' },
     { icon: CreditCard, label: 'Plan & Billing', path: '/dashboard/billing' },
     { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
     { icon: HelpCircle, label: 'Help & Support', path: '/dashboard/support' },

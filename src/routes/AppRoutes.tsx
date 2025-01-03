@@ -3,14 +3,15 @@ import MainLayout from '../layouts/MainLayout';
 import Homepage from '../components/Homepage';
 import AuthPage from '../components/auth/AuthPage';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
-import SessionsPage from '../pages/dashboard/SessionsPage';
-import HistoryPage from '../pages/dashboard/HistoryPage';
-import SavedQuestionsPage from '../pages/dashboard/SavedQuestionsPage';
+// import SessionsPage from '../pages/dashboard/SessionsPage';
+// import HistoryPage from '../pages/dashboard/HistoryPage';
+// import SavedQuestionsPage from '../pages/dashboard/SavedQuestionsPage';
 import PracticePage from '../components/practice/PracticePage';
-import ProtectedRoute from './ProtectedRoute';
+// import ProtectedRoute from './ProtectedRoute';
 import ProfilePage from '../components/dashboard/ProfilePage';
 import SettingsPage from '../components/dashboard/SettingsPage';
 import { useAuth } from '../context/AuthContext';
+import StartPracticePage from '../components/dashboard/StartPracticePage';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
@@ -37,12 +38,14 @@ const AppRoutes = () => {
           //</ProtectedRoute>
         }
       >
-        <Route index element={<ProfilePage />} />
+        <Route index element={<StartPracticePage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="sessions" element={<SessionsPage />} />
+
+        {/* <Route path="sessions" element={<SessionsPage />} />
         <Route path="history" element={<HistoryPage />} />
-        <Route path="saved" element={<SavedQuestionsPage />} />
+        <Route path="saved" element={<SavedQuestionsPage />} /> */}
+
         <Route path="practice/*" element={<PracticePage />} />
       </Route>
 
