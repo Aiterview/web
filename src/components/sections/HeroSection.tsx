@@ -1,10 +1,10 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { handleAuthRedirect } from '../../utils/handleAuthRedirect';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const HeroSection = () => {
-  const navigate = useNavigate();
-  const isLoggedIn = true;
+  const { isAuthenticated } = useAuth();
+  const destination = isAuthenticated ? '/dashboard' : '/auth';
 
   return (
     <div className="relative pt-20 overflow-hidden">
@@ -35,12 +35,14 @@ const HeroSection = () => {
             </p>
             
             <div className="flex items-center space-x-6">
-              <button className="button-primary group" onClick={() => handleAuthRedirect(isLoggedIn, navigate)}>
-                <span className="flex items-center">
-                  Get Started Free
-                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </button>
+              <Link to={destination}>
+                <button className="button-primary group">
+                  <span className="flex items-center">
+                    Get Started Free
+                    <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </button>
+              </Link>
               
               <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 font-medium transition-colors flex items-center">
                 See How It Works
