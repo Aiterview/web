@@ -9,10 +9,14 @@ import FormInput from './components/FormInput';
 import SocialButton from './components/SocialButton';
 import AuthDivider from './components/AuthDivider';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
+import { useGitHubSignIn } from '../../hooks/useGitHubSignIn';
+
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { signInWithEmail } = useAuthStore();
+  const { signIn, loading } = useGitHubSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,9 +28,7 @@ const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      const response = await login({ email, password });
-      
-      localStorage.setItem('token', response.data.token);
+      await signInWithEmail(email, password);
       
       navigate('/dashboard');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,7 +107,8 @@ const LoginForm = () => {
       <SocialButton 
           icon={Github} 
           label="GitHub" 
-          //onClick={}
+          onClick={signIn}
+          disabled={loading}
         />
         {/* <SocialButton icon={Linkedin} label="LinkedIn" /> */}
       </div>

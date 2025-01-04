@@ -1,10 +1,10 @@
-import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
 interface SocialButtonProps {
   icon: LucideIcon;
   label: string;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 const SocialButton = ({ icon: Icon, label, onClick }: SocialButtonProps) => {

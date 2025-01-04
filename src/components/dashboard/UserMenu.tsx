@@ -7,11 +7,11 @@ import {
   LogOut
 } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthStore } from '../../store/authStore';
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout } = useAuthStore();
 
   const menuItems = [
     { icon: User, label: 'Profile', path: '/dashboard/profile' },

@@ -9,8 +9,9 @@ import {
 import FormInput from './components/FormInput';
 import SocialButton from './components/SocialButton';
 import AuthDivider from './components/AuthDivider';
-import { register } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
+import { useGitHubSignIn } from '../../hooks/useGitHubSignIn';
 
 const RegisterForm = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +19,8 @@ const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { signUpWithEmail } = useAuthStore();
+  const { signIn, loading } = useGitHubSignIn();
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -25,9 +28,7 @@ const RegisterForm = () => {
       setIsLoading(true);
   
       try {
-        await register({ email, password });
-        
-        //localStorage.setItem('token', response.data.token);
+        await signUpWithEmail(email, password);
         
         navigate('/dashboard');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,7 +109,12 @@ const RegisterForm = () => {
       <AuthDivider text="Or sign up with" />
 
       <div className="grid place-items-center"> {/** grid-cols-2 gap-4 */}
-        <SocialButton icon={Github} label="GitHub" />
+        <SocialButton 
+          icon={Github} 
+          label="GitHub" 
+          onClick={signIn}
+          disabled={loading}
+        />
         {/* <SocialButton icon={Linkedin} label="LinkedIn" /> */}
       </div>
     </form>

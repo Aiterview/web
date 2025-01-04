@@ -7,7 +7,7 @@ import DashboardLayout from '../components/dashboard/DashboardLayout';
 // import HistoryPage from '../pages/dashboard/HistoryPage';
 // import SavedQuestionsPage from '../pages/dashboard/SavedQuestionsPage';
 import PracticePage from '../components/practice/PracticePage';
-// import ProtectedRoute from './ProtectedRoute';
+import ProtectedRoute from './ProtectedRoute';
 import ProfilePage from '../components/dashboard/ProfilePage';
 import SettingsPage from '../components/dashboard/SettingsPage';
 import StartPracticePage from '../components/dashboard/StartPracticePage';
@@ -34,9 +34,9 @@ const AppRoutes = () => {
       <Route
         path="/dashboard"
         element={
-          //<ProtectedRoute>
+          <ProtectedRoute>
             <DashboardLayout />
-          //</ProtectedRoute>
+          </ProtectedRoute>
         }
       >
         <Route index element={<StartPracticePage />} />
