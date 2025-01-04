@@ -43,7 +43,7 @@ const PracticePage = () => {
   const CurrentStepComponent = steps[currentStep].component;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 pt-20 pb-12">
+    <div className="min-h-screen bg-white pt-20 pb-12 rounded-xl shadow-sm">
       <div className="container mx-auto px-4">
         {/* Progress Bar */}
         <div className="max-w-2xl mx-auto mb-12">
