@@ -10,6 +10,7 @@ interface FormInputProps {
   placeholder: string;
   icon: LucideIcon;
   required?: boolean;
+  disabled?: boolean;
 }
 
 const FormInput = ({

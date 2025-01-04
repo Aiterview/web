@@ -29,12 +29,11 @@ const LoginForm = () => {
 
     try {
       await signInWithEmail(email, password);
-      
       navigate('/dashboard');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(
-        err.response?.data?.message || 
+        err.message || 
         'An error occurred during login. Please try again.'
       );
     } finally {
@@ -61,6 +60,7 @@ const LoginForm = () => {
           placeholder="you@example.com"
           icon={Mail}
           required
+          disabled={isLoading}
         />
 
         <FormInput
@@ -72,6 +72,7 @@ const LoginForm = () => {
           placeholder="••••••••"
           icon={Lock}
           required
+          disabled={isLoading}
         />
       </div>
 
@@ -93,10 +94,12 @@ const LoginForm = () => {
 
       <button
         type="submit"
-        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 px-4 rounded-lg
-                 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg hover:shadow-xl
-                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                 transform hover:scale-[1.02] active:scale-[0.98]"
+        disabled={isLoading}
+        className={`w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 px-4 rounded-lg
+          hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg hover:shadow-xl
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+          transform hover:scale-[1.02] active:scale-[0.98]
+          ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
       </button>
