@@ -10,11 +10,12 @@ import PracticePage from '../components/practice/PracticePage';
 // import ProtectedRoute from './ProtectedRoute';
 import ProfilePage from '../components/dashboard/ProfilePage';
 import SettingsPage from '../components/dashboard/SettingsPage';
-import { useAuth } from '../context/AuthContext';
 import StartPracticePage from '../components/dashboard/StartPracticePage';
+import { useAuthStore } from '../store/authStore';
+
 
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <Routes>

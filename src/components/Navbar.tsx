@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { BrainCog } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore } from '../store/authStore';
 
 const Navbar = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuthStore();
   const location = useLocation();
 
   // Don't show navbar on auth pages
