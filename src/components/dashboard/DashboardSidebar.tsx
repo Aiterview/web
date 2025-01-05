@@ -10,7 +10,11 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+  isOpen: boolean;
+}
+
+const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen }) => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Start Practice', path: '/dashboard' },
     { icon: User, label: 'Profile', path: '/dashboard/profile' },
@@ -23,7 +27,11 @@ const DashboardSidebar = () => {
   ];
 
   return (
-    <aside className="fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 p-4">
+    <aside
+      className={`fixed top-16 left-0 w-64 h-full bg-white border-r border-gray-200 p-4 z-50 transform transition-transform ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 lg:top-16 lg:h-[calc(100vh-4rem)]`}
+    >
       <nav className="space-y-1">
         {navItems.map(({ icon: Icon, label, path }) => (
           <NavLink
