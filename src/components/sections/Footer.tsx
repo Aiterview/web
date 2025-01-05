@@ -28,7 +28,7 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-gray-800 mb-4">Product</h3>
             <FooterLinks
-              links={['Features', 'How It Works', 'Pricing', 'Enterprise']}
+              links={['Features', 'How It Works', 'Pricing']}
             />
           </div>
 
@@ -80,7 +80,7 @@ const FooterLinks = ({ links }: { links: string[] }) => (
     {links.map((link) => (
       <li key={link}>
         <a
-          href="#"
+          href={`#${link.toLowerCase().replace(/\s+/g, '-')}`}
           className="text-gray-600 hover:text-indigo-600 transition-colors"
         >
           {link}

@@ -1,4 +1,6 @@
 import { Check, Sparkles } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
+import { Link } from 'react-router-dom';
 
 const PricingSection = () => {
   const freePlan = {
@@ -22,6 +24,9 @@ const PricingSection = () => {
       'Export interview history',
     ],
   };
+
+  const { isAuthenticated } = useAuthStore()
+  const destination = isAuthenticated ? "/dashboard" : "/auth"
 
   return (
     <section id="pricing" className="container mx-auto px-4 py-20 relative">
@@ -62,10 +67,12 @@ const PricingSection = () => {
             ))}
           </ul>
 
-          <button className="w-full px-6 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold
-                         hover:bg-indigo-50 transition-colors">
-            Get Started
-          </button>
+          <Link to={destination}>
+            <button className="w-full px-6 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-semibold
+                          hover:bg-indigo-50 transition-colors">
+              Get Started
+            </button>
+          </Link>
         </div>
 
         {/* Premium Plan */}
