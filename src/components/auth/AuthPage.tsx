@@ -2,6 +2,7 @@ import { useState } from 'react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import { BrainCog } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,7 +15,9 @@ const AuthPage = () => {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <div className="p-2 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl">
-                <BrainCog className="h-8 w-8 text-white" />
+                <Link to="/">
+                  <BrainCog className="h-8 w-8 text-white" />
+                </Link>
               </div>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
