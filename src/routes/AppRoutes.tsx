@@ -12,6 +12,7 @@ import ProfilePage from '../components/dashboard/ProfilePage';
 import SettingsPage from '../components/dashboard/SettingsPage';
 import StartPracticePage from '../components/dashboard/StartPracticePage';
 import { useAuthStore } from '../store/authStore';
+import PlanAndBillingPage from '../components/dashboard/PlanAndBillingPage';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuthStore();
@@ -41,6 +42,7 @@ const AppRoutes = () => {
         <Route index element={<StartPracticePage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="billing" element={<PlanAndBillingPage/>}/>
 
         {/* <Route path="sessions" element={<SessionsPage />} />
         <Route path="history" element={<HistoryPage />} />
