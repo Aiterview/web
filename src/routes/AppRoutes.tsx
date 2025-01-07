@@ -13,6 +13,7 @@ import SettingsPage from '../components/dashboard/SettingsPage';
 import StartPracticePage from '../components/dashboard/StartPracticePage';
 import { useAuthStore } from '../store/authStore';
 import PlanAndBillingPage from '../components/dashboard/PlanAndBillingPage';
+import HelpAndSupportPage from '../components/dashboard/HelpAndSupportPage';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuthStore();
@@ -43,6 +44,7 @@ const AppRoutes = () => {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="billing" element={<PlanAndBillingPage/>}/>
+        <Route path="support" element={<HelpAndSupportPage/>}/>
 
         {/* <Route path="sessions" element={<SessionsPage />} />
         <Route path="history" element={<HistoryPage />} />
