@@ -13,7 +13,6 @@ import SettingsPage from '../components/dashboard/SettingsPage';
 import StartPracticePage from '../components/dashboard/StartPracticePage';
 import { useAuthStore } from '../store/authStore';
 
-
 const AppRoutes = () => {
   const { isAuthenticated } = useAuthStore();
 

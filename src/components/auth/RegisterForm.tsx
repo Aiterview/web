@@ -1,46 +1,47 @@
-import React, { useState } from 'react';
-import { 
-  //User, 
-  Mail, 
-  Lock, 
-  Github, 
-  //Linkedin 
-} from 'lucide-react';
-import FormInput from './components/FormInput';
-import SocialButton from './components/SocialButton';
-import AuthDivider from './components/AuthDivider';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import { useGitHubSignIn } from '../../hooks/useGitHubSignIn';
+import React, { useState } from "react";
+import {
+  //User,
+  Mail,
+  Lock,
+  Github,
+  //Linkedin
+} from "lucide-react";
+import FormInput from "./components/FormInput";
+import SocialButton from "./components/SocialButton";
+import AuthDivider from "./components/AuthDivider";
+import { useAuthStore } from "../../store/authStore";
+import { useGitHubSignIn } from "../../hooks/useGitHubSignIn";
+import { useNavigate } from "react-router";
 
 const RegisterForm = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
+
   const { signUpWithEmail } = useAuthStore();
   const { signIn, loading } = useGitHubSignIn();
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setError('');
-      setIsLoading(true);
-  
-      try {
-        await signUpWithEmail(email, password);
-        
-        navigate('/dashboard');
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      await signUpWithEmail(email, password);
+
+      navigate("/dashboard")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message || 
-          'An error occurred during login. Please try again.'
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+          "An error occurred during login. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -85,11 +86,11 @@ const RegisterForm = () => {
           required
         />
         <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-          I agree to the{' '}
+          I agree to the{" "}
           <a href="#" className="text-indigo-600 hover:text-indigo-500">
             Terms of Service
-          </a>{' '}
-          and{' '}
+          </a>{" "}
+          and{" "}
           <a href="#" className="text-indigo-600 hover:text-indigo-500">
             Privacy Policy
           </a>
@@ -103,15 +104,17 @@ const RegisterForm = () => {
                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                  transform hover:scale-[1.02] active:scale-[0.98]"
       >
-        {isLoading ? 'Creating Account...' : 'Create Account'}
+        {isLoading ? "Creating Account..." : "Create Account"}
       </button>
 
       <AuthDivider text="Or sign up with" />
 
-      <div className="grid place-items-center"> {/** grid-cols-2 gap-4 */}
-        <SocialButton 
-          icon={Github} 
-          label="GitHub" 
+      <div className="grid place-items-center">
+        {" "}
+        {/** grid-cols-2 gap-4 */}
+        <SocialButton
+          icon={Github}
+          label="GitHub"
           onClick={signIn}
           disabled={loading}
         />

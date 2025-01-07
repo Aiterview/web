@@ -1,11 +1,11 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import DashboardHeader from './DashboardHeader';
 import DashboardSidebar from './DashboardSidebar';
-import { useState } from 'react';
 
 const DashboardLayout = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader 

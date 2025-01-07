@@ -10,6 +10,7 @@ interface IAuthState {
     email: string;
     name?: string;
     provider?: AuthProvider;
+    emailVerified?: boolean;
   };
   setAuthenticated: (value: boolean) => void;
   setLoading: (value: boolean) => void;
@@ -38,11 +39,13 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (data.user) {
+        const emailVerified = data.user.email_confirmed_at ? true : false
         set({
           user: {
             email: data.user.email || '',
             name: data.user.user_metadata?.name,
             provider: AuthProvider.EMAIL,
+            emailVerified
           },
           isAuthenticated: true,
           isLoading: false,
@@ -70,11 +73,13 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
       }
 
       if (data.user) {
+        const emailVerified = data.user.email_confirmed_at ? true : false
         set({
           user: {
             email: data.user.email || '',
             name: data.user.user_metadata?.name,
             provider: AuthProvider.EMAIL,
+            emailVerified
           },
           isAuthenticated: true,
           isLoading: false,
