@@ -45,7 +45,7 @@ const HowItWorks = () => {
               <div className="hidden md:block absolute top-1/2 right-0 w-full h-0.5 bg-gradient-to-r from-indigo-100 to-purple-100" />
             )}
             <div className="feature-card">
-              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r ${step.gradient} rounded-2xl blur-xl -z-10`} />
+              {/* <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r ${step.gradient} rounded-2xl blur-xl -z-10`} /> */}
               <div className={`w-20 h-20 rounded-2xl bg-gradient-to-r ${step.gradient} p-0.5 mb-6`}>
                 <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
                   <step.icon className="h-10 w-10 text-indigo-600" />

@@ -51,7 +51,7 @@ const FeaturesSection = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 relative">
         {features.map((feature, index) => (
           <div key={index} className="feature-card group">
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r ${feature.gradient} rounded-2xl blur-xl -z-10`} />
+            {/* <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r ${feature.gradient} rounded-2xl blur-xl -z-10`} /> */}
             <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${feature.gradient} p-0.5 mb-6`}>
               <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
                 <feature.icon className="h-8 w-8 text-indigo-600" />
