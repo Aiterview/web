@@ -17,7 +17,7 @@ const DashboardLayout = () => {
         <DashboardSidebar 
           isOpen={isSidebarOpen}
         />
-        <main className="flex-1 lg:ml-64 p-8 mt-16">
+        <main className="flex-1 lg:ml-64 px-1 py-8 mt-16">
           <Outlet />
         </main>
       </div>
