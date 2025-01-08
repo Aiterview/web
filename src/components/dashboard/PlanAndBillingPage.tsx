@@ -38,8 +38,8 @@ const PlanAndBillingPage = () => {
         "Core features",
       ],
       current: false,
-      color: "bg-blue-50",
-      highlight: "border-blue-200",
+      color: "bg-indigo-50",
+      highlight: "border-indigo-200",
     },
     {
       name: "Premium",
@@ -53,8 +53,8 @@ const PlanAndBillingPage = () => {
         "API access",
       ],
       current: true,
-      color: "bg-blue-100",
-      highlight: "border-blue-500",
+      color: "bg-indigo-100",
+      highlight: "border-indigo-500",
     },
   ];
 
@@ -62,7 +62,7 @@ const PlanAndBillingPage = () => {
       <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="w-full max-w-4xl bg-white rounded-xl shadow-sm overflow-hidden">
           {/* Header with gradient background */}
-          <div className="px-6 sm:px-8 py-6 sm:py-8 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-200">
+          <div className="px-6 sm:px-8 py-6 sm:py-8 bg-indigo-50 border-b border-gray-200">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Plan & Billing
             </h1>
@@ -75,12 +75,12 @@ const PlanAndBillingPage = () => {
           <div className="px-6 sm:px-8 py-4 sm:py-6 border-b border-gray-200 bg-white">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-start sm:items-center gap-4">
-                <div className="p-3 rounded-full bg-blue-50">
-                  <Package className="h-8 w-8 text-blue-500" />
+                <div className="p-3 rounded-full bg-indigo-50">
+                  <Package className="h-8 w-8 text-indigo-600" />
                 </div>
                 <div>
                   <h2 className="font-semibold text-gray-900">
-                    Current Plan: <span className="text-blue-500">Premium</span>
+                    Current Plan: <span className="text-indigo-600">Premium</span>
                   </h2>
                   <p className="text-gray-600 flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4" /> Billing cycle ends in 18 days
@@ -106,7 +106,7 @@ const PlanAndBillingPage = () => {
               <h2 className="text-lg font-semibold text-gray-900">
                 Payment Method
               </h2>
-              <button className="inline-flex items-center text-blue-500 hover:text-blue-600 transition-all gap-2 hover:gap-3 text-sm">
+              <button className="inline-flex items-center text-indigo-500 hover:text-indigo-600 transition-all gap-2 hover:gap-3 text-sm">
                 <Settings className="h-4 w-4" />
                 <span>Manage</span>
                 <ArrowRight className="h-4 w-4" />
@@ -115,8 +115,8 @@ const PlanAndBillingPage = () => {
 
             <div className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-white">
               <div className="flex items-center gap-4">
-                <div className="p-2 rounded-lg bg-blue-50">
-                  <CreditCard className="h-6 w-6 text-blue-500" />
+                <div className="p-2 rounded-lg bg-indigo-50">
+                  <CreditCard className="h-6 w-6 text-indigo-500" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 text-sm sm:text-base">
@@ -170,7 +170,7 @@ const PlanAndBillingPage = () => {
                 >
                   {plan.current && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="px-4 py-1 rounded-full bg-blue-500 text-white font-semibold text-sm">
+                      <span className="px-4 py-1 rounded-full bg-indigo-500 text-white font-semibold text-sm">
                         Current Plan
                       </span>
                     </div>
@@ -181,7 +181,7 @@ const PlanAndBillingPage = () => {
                         {plan.name}
                       </h3>
                       <div className="mt-3">
-                        <span className="text-2xl sm:text-3xl font-bold text-blue-500">
+                        <span className="text-2xl sm:text-3xl font-bold text-indigo-500">
                           ${plan.price}
                         </span>
                         <span className="text-gray-600">/{plan.interval}</span>
@@ -203,7 +203,7 @@ const PlanAndBillingPage = () => {
                       className={`w-full mt-6 sm:mt-8 py-3 rounded-lg text-sm sm:text-base ${
                         plan.current
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : "bg-blue-500 text-white hover:bg-blue-600"
+                          : "bg-indigo-500 text-white hover:bg-indigo-600"
                       }`}
                       disabled={plan.current}
                     >
@@ -245,8 +245,8 @@ const BillingHistoryItem: React.FC<IBillingHistoryItemProps> = ({
     <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       {/* Informações principais */}
       <div className="flex items-start sm:items-center gap-4">
-        <div className="p-2 rounded-lg bg-gray-50">
-          <CreditCard className="h-5 w-5 text-blue-500" />
+        <div className="p-2 rounded-lg bg-indigo-50">
+          <CreditCard className="h-5 w-5 text-indigo-500" />
         </div>
         <div>
           <p className="font-medium text-gray-900">{date}</p>
@@ -260,7 +260,7 @@ const BillingHistoryItem: React.FC<IBillingHistoryItemProps> = ({
         <span className="px-3 py-1 rounded-full bg-green-100 text-green-600 text-sm sm:text-base text-center">
           {status}
         </span>
-        <button className="inline-flex items-center justify-center px-4 py-2 text-blue-500 hover:text-blue-600 gap-2 hover:gap-3 transition-all border border-blue-200 rounded-lg text-sm sm:text-base w-full sm:w-auto">
+        <button className="inline-flex items-center justify-center px-4 py-2 text-indigo-500 hover:text-indigo-600 gap-2 hover:gap-3 transition-all border border-indigo-200 rounded-lg text-sm sm:text-base w-full sm:w-auto">
           Download
           <Download className="h-4 w-4" />
         </button>
@@ -289,8 +289,8 @@ const StatCard: React.FC<IStatCardProps> = ({
         };
       default:
         return {
-          text: "text-blue-500",
-          bg: "bg-blue-50",
+          text: "text-indigo-500",
+          bg: "bg-indigo-50",
         };
     }
   };
