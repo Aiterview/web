@@ -14,6 +14,8 @@ import StartPracticePage from '../components/dashboard/StartPracticePage';
 import { useAuthStore } from '../store/authStore';
 import PlanAndBillingPage from '../components/dashboard/PlanAndBillingPage';
 import HelpAndSupportPage from '../components/dashboard/HelpAndSupportPage';
+import UpdatePasswordForm from '../components/auth/components/UpdatePasswordForm';
+import { PasswordRecoveryRoute } from './PasswordRecoveryRoute';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuthStore();
@@ -30,6 +32,15 @@ const AppRoutes = () => {
           }
         />
       </Route>
+
+      <Route
+        path="/update-password"
+        element={
+          <PasswordRecoveryRoute>
+            <UpdatePasswordForm />
+          </PasswordRecoveryRoute>
+        }
+      />
 
       {/* Protected Dashboard Routes */}
       <Route

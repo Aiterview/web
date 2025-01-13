@@ -158,7 +158,7 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
     try {
       loadingStore.getState().setLoading(true);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}`,
+        redirectTo: `${window.location.origin}/update-password`,
       });
       if (error) throw error;
     } finally {
