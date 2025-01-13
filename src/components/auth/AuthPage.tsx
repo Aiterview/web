@@ -3,9 +3,23 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import { BrainCog } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ForgotPasswordForm from './components/ForgotPasswordForm';
 
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgotPassword'>('login');
+
+  const renderForm = () => {
+    switch (authMode) {
+      case 'login':
+        return <LoginForm onForgotPassword={() => setAuthMode('forgotPassword')} />;
+      case 'register':
+        return <RegisterForm />;
+      case 'forgotPassword':
+        return <ForgotPasswordForm onBackToLogin={() => setAuthMode('login')} />;
+      default:
+        return <LoginForm onForgotPassword={() => setAuthMode('forgotPassword')} />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
@@ -21,26 +35,40 @@ const AuthPage = () => {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+              {authMode === 'login'
+                ? 'Welcome Back'
+                : authMode === 'register'
+                ? 'Create Account'
+                : 'Reset Password'}
             </h2>
             <p className="text-gray-600">
-              {isLogin ? 'Sign in to continue your practice' : 'Join thousands of job seekers'}
+              {authMode === 'login'
+                ? 'Sign in to continue your practice'
+                : authMode === 'register'
+                ? 'Join thousands of job seekers'
+                : 'Enter your email to reset your password'}
             </p>
           </div>
 
-          {isLogin ? <LoginForm /> : <RegisterForm />}
+          {renderForm()}
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="ml-2 text-indigo-600 hover:text-indigo-500 font-medium"
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </div>
+          {authMode !== 'forgotPassword' && (
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                {authMode === 'login'
+                  ? "Don't have an account?"
+                  : 'Already have an account?'}
+                <button
+                  onClick={() =>
+                    setAuthMode(authMode === 'login' ? 'register' : 'login')
+                  }
+                  className="ml-2 text-indigo-600 hover:text-indigo-500 font-medium"
+                >
+                  {authMode === 'login' ? 'Sign up' : 'Sign in'}
+                </button>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Bottom Banner */}
