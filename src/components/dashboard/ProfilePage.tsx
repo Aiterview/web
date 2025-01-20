@@ -32,7 +32,7 @@ const ProfilePage = () => {
           </div>
 
           <div className="mt-6">
-            <h1 className="text-2xl font-bold text-gray-900">{userData.full_name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{userData.full_name || 'No name provided'}</h1>
             <p className="text-gray-600">{userData.profession || 'No profession provided'}</p>
           </div>
 
