@@ -1,7 +1,20 @@
+import { useState } from 'react';
 import { Camera, Mail, Phone, MapPin, Briefcase, Calendar } from 'lucide-react';
 import { user } from '../../lib/supabase/supaseUser';
 
 const ProfilePage = () => {
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleEdit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault();
+
+    if(!showEditModal) {
+      setShowEditModal(true);
+    }
+
+    console.log(showEditModal)
+  }
+
   const userData = user.data;
 
   const month = new Date(userData.created_at).toLocaleString('en-US', { month: 'long' });
@@ -10,6 +23,53 @@ const ProfilePage = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+
+        {/* Edit Profile Modal */}
+        {showEditModal && (
+         <div>
+          <div>
+            <span>Edit Profile</span>
+            {/*name */}
+            <EditsField
+              label='Full Name'
+              value={userData.full_name}
+              placeholder={userData.full_name || 'Enter full name'}
+            />
+            {/*Profession */}
+            <EditsField
+              label='Profession'
+              value={userData.profession}
+              placeholder={userData.profession || 'Enter profession'}
+            />
+            {/*email */}
+            <EditsField
+              label='Email Address'
+              value={userData.email}
+              placeholder={userData.email || 'Enter email'}
+              type='email'
+            />
+            {/*phone */}
+            <EditsField
+              label='Phone Number'
+              value={userData.phone}
+              placeholder={userData.phone || 'Enter phone number'}
+            />
+            {/*location */}
+            <EditsField
+              label='Location'
+              value={userData.location}
+              placeholder={userData.location || 'Enter location'}
+            />
+            {/*company */}
+            <EditsField
+              label='Company'
+              value={userData.company}
+              placeholder={userData.company || 'Enter company'}
+            />
+          </div>
+         </div> 
+        )}
+
         {/* Cover Image */}
         <div className="h-48 bg-gradient-to-r from-indigo-500 to-purple-500 relative" />
 
@@ -26,7 +86,10 @@ const ProfilePage = () => {
                 <Camera className="h-4 w-4 text-gray-600" />
               </button>
             </div>
-            <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <button 
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              onClick={(e) => handleEdit(e)}
+            >
               Edit Profile
             </button>
           </div>
@@ -67,5 +130,29 @@ const ProfilePage = () => {
     </div>
   );
 };
+
+const EditsField = ({ 
+  label, 
+  value, 
+  type = "text",
+  placeholder 
+}: {
+  label: string;
+  value?: string;
+  type?: string;
+  placeholder?: string;
+}) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <input
+      type={type}
+      defaultValue={value}
+      placeholder={placeholder}
+      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+    />
+  </div>
+);
 
 export default ProfilePage;
