@@ -6,6 +6,7 @@ import { AuthProvider } from '../types/authProvider';
 interface IAuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
+  accessToken: string | null;
   user: null | {
     email: string;
     name?: string;
@@ -15,6 +16,7 @@ interface IAuthState {
   setAuthenticated: (value: boolean) => void;
   setLoading: (value: boolean) => void;
   setUser: (user: IAuthState['user']) => void;
+  setAccessToken: (token: string | null) => void;
   logout: () => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -28,11 +30,13 @@ interface IAuthState {
 export const useAuthStore = create<IAuthState>((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
+  accessToken: null,
   user: null,
   setAuthenticated: value => set({ isAuthenticated: value }),
   setLoading: value => set({ isLoading: value }),
   setUser: user => set({ user, isAuthenticated: true }),
-  logout: () => set({ user: null, isAuthenticated: false }),
+  setAccessToken: token => set({ accessToken: token }),
+  logout: () => set({ user: null, isAuthenticated: false, accessToken: null }),
   signInWithEmail: async (email, password) => {
     try {
       loadingStore.getState().setLoading(true);
@@ -47,6 +51,7 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
             provider: AuthProvider.EMAIL,
             emailVerified
           },
+          accessToken: data.session?.access_token || null,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -81,6 +86,7 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
             provider: AuthProvider.EMAIL,
             emailVerified
           },
+          accessToken: data.session?.access_token || null,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -96,9 +102,9 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
       if (error && !error.message?.includes('Auth session missing')) {
         throw error;
       }
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, isLoading: false, accessToken: null });
     } catch (error) {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, isAuthenticated: false, isLoading: false, accessToken: null });
       throw error;
     } finally {
       loadingStore.getState().setLoading(false);
@@ -118,6 +124,7 @@ export const useAuthStore = create<IAuthState>((set, get) => ({
             name: session.user.user_metadata?.name,
             provider: provider as AuthProvider,
           },
+          accessToken: session.access_token || null,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -197,12 +204,14 @@ supabase.auth.onAuthStateChange((_event, session) => {
         name: session.user.user_metadata?.name,
         provider: provider as AuthProvider,
       },
+      accessToken: session.access_token || null,
       isAuthenticated: true,
       isLoading: false,
     });
   } else {
     useAuthStore.setState({
       user: null,
+      accessToken: null,
       isAuthenticated: false,
       isLoading: false,
     });

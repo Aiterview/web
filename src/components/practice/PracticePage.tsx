@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import JobTypeStep from './steps/JobTypeStep';
 import RequirementsStep from './steps/RequirementsStep';
 import QuestionsStep from './steps/QuestionsStep';
 import PracticeStep from './steps/PracticeStep';
 import FeedbackStep from './steps/FeedbackStep';
+import { checkApiConnection } from '../../lib/api/checkApiConnection';
+import { useUsageStore } from '../../store/usageStore';
 
 const PracticePage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -11,6 +13,14 @@ const PracticePage = () => {
   const [requirements, setRequirements] = useState('');
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [apiStatus, setApiStatus] = useState<{
+    isConnected: boolean;
+    message: string;
+  } | null>(null);
+  
+  // Track whether this is a new practice session
+  const [isNewSession, setIsNewSession] = useState(true);
+  const { fetchUsage } = useUsageStore();
 
   const steps = [
     { label: 'Job Type', component: JobTypeStep },
@@ -20,9 +30,38 @@ const PracticePage = () => {
     { label: 'Feedback', component: FeedbackStep },
   ];
 
+  useEffect(() => {
+    // Check API connection
+    const verifyApiConnection = async () => {
+      const status = await checkApiConnection();
+      setApiStatus(status);
+      
+      if (!status.isConnected) {
+        console.warn('API connection issue:', status.message);
+      }
+    };
+    
+    verifyApiConnection();
+    fetchUsage();
+  }, []);
+  
+  // Track when a user completes the practice flow
+  useEffect(() => {
+    if (currentStep === steps.length - 1) {
+      // User has reached the feedback step (completed the flow)
+      setIsNewSession(false);
+    }
+  }, [currentStep]);
+
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
+    }
+    
+    // If moving from Feedback (last step) to Job Type (first step)
+    // Reset the session state
+    if (currentStep === steps.length - 1) {
+      setIsNewSession(true);
     }
   };
 
@@ -38,6 +77,10 @@ const PracticePage = () => {
     setRequirements('');
     setQuestions([]);
     setAnswers({});
+    setIsNewSession(true);
+    
+    // Refresh usage stats
+    fetchUsage();
   };
 
   const CurrentStepComponent = steps[currentStep].component;
@@ -45,6 +88,15 @@ const PracticePage = () => {
   return (
     <div className="min-h-screen bg-white pt-20 pb-12 rounded-xl shadow-sm">
       <div className="container mx-auto px-4">
+        {/* API Status Warning */}
+        {apiStatus && !apiStatus.isConnected && currentStep === 2 && (
+          <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300">
+            <p className="font-medium">API Connection Issue</p>
+            <p className="text-sm">{apiStatus.message}</p>
+            <p className="text-sm mt-1">Default questions will be used instead.</p>
+          </div>
+        )}
+      
         {/* Progress Bar */}
         <div className="max-w-2xl mx-auto mb-12">
           <div className="flex justify-between mb-2">
@@ -80,6 +132,8 @@ const PracticePage = () => {
           onNext={handleNext}
           onBack={handleBack}
           onRetake={handleRetake}
+          apiStatus={apiStatus}
+          isNewSession={isNewSession}
         />
       </div>
     </div>
