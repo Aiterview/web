@@ -80,6 +80,8 @@ export const apiService = {
           numberOfQuestions
         });
         
+        console.log('Raw API response:', response.data);
+        
         return {
           success: true,
           status: response.status,

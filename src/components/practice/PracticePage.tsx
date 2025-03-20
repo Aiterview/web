@@ -60,7 +60,7 @@ const PracticePage = () => {
       // If moving to the feedback step, check if all answers are complete
       if (currentStep === 3) {
         const answeredCount = Object.keys(answers).length;
-        if (answeredCount < questions.length) {
+        if (questions && questions.length > 0 && answeredCount < questions.length) {
           // Fill in empty answers to avoid errors
           const updatedAnswers = { ...answers };
           for (let i = 0; i < questions.length; i++) {

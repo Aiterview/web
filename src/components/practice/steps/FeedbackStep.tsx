@@ -61,18 +61,31 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
 
   // Local fallback for feedback generation if API fails
   const generateLocalFeedback = () => {
-    // Analyze the responses
-    const strengths = analyzeStrengths(answers);
-    const improvements = analyzeImprovements(answers);
-    const overallAssessment = generateOverallAssessment(answers, strengths.length, improvements.length);
-    const score = calculateScore(answers, questions.length);
+    try {
+      // Analyze the responses
+      const strengths = analyzeStrengths(answers);
+      const improvements = analyzeImprovements(answers);
+      const overallAssessment = generateOverallAssessment(answers, strengths?.length || 0, improvements?.length || 0);
+      const score = calculateScore(answers, questions?.length || 0);
 
-    setFeedback({
-      strengths,
-      improvements,
-      overallAssessment,
-      score
-    });
+      setFeedback({
+        strengths: strengths || [],
+        improvements: improvements || [],
+        overallAssessment: overallAssessment || "No assessment available.",
+        score: score || 0
+      });
+    } catch (error) {
+      console.error('Error generating local feedback:', error);
+      setError('Error generating local feedback. Please try again.');
+      
+      // Set default feedback
+      setFeedback({
+        strengths: ['Answered all interview questions'],
+        improvements: ['Continue practicing to improve your responses'],
+        overallAssessment: 'Thank you for participating in the practice interview.',
+        score: 50
+      });
+    }
   };
 
   // Analyze strengths in responses (local fallback)
@@ -204,6 +217,11 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
 
   // Calculate overall score (local fallback)
   const calculateScore = (answers: Record<string, string>, questionCount: number): number => {
+    // Verificar se há questões
+    if (!questionCount) {
+      return 0;
+    }
+    
     // Scoring criteria
     let score = 0;
     
@@ -212,7 +230,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
     score += (answeredQuestions / questionCount) * 100 * 0.5; // 50% of score for answering all questions
     
     // Check average length of responses (ideal between 100-200 characters)
-    const avgLength = Object.values(answers).reduce((sum, answer) => sum + answer.length, 0) / answeredQuestions;
+    const avgLength = answeredQuestions > 0 ? Object.values(answers).reduce((sum, answer) => sum + answer.length, 0) / answeredQuestions : 0;
     const lengthScore = Math.min(100, (avgLength / 150) * 100);
     score += lengthScore * 0.3; // 30% of score for appropriate length
     
@@ -223,7 +241,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       answer.toLowerCase().includes('case')
     ).length;
     
-    const exampleScore = (containsExamples / answeredQuestions) * 100;
+    const exampleScore = answeredQuestions > 0 ? (containsExamples / answeredQuestions) * 100 : 0;
     score += exampleScore * 0.2; // 20% of score for using examples
     
     return Math.round(score);
@@ -276,14 +294,14 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             <FeedbackSection
               title="Strengths"
-              items={feedback.strengths}
+              items={feedback?.strengths || []}
               icon={<CheckCircle className="h-5 w-5 text-green-500" />}
               gradient="from-green-50 to-emerald-50"
               border="border-green-200"
             />
             <FeedbackSection
               title="Areas for Improvement"
-              items={feedback.improvements}
+              items={feedback?.improvements || []}
               icon={<XCircle className="h-5 w-5 text-red-500" />}
               gradient="from-red-50 to-rose-50"
               border="border-red-200"
@@ -293,7 +311,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
           <div className="bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-sm mb-8">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Overall Assessment</h3>
             <p className="text-gray-600 leading-relaxed">
-              {feedback.overallAssessment}
+              {feedback?.overallAssessment || "No assessment available."}
             </p>
           </div>
         </>
@@ -322,16 +340,21 @@ interface FeedbackSectionProps {
   border: string;
 }
 
-const FeedbackSection: React.FC<FeedbackSectionProps> = ({ title, items, icon, gradient, border }) => (
+const FeedbackSection: React.FC<FeedbackSectionProps> = ({ title, items = [], icon, gradient, border }) => (
   <div className={`bg-gradient-to-br ${gradient} p-6 rounded-xl shadow-sm border ${border}`}>
     <h3 className="text-xl font-semibold text-gray-800 mb-4">{title}</h3>
     <ul className="space-y-3">
-      {items.map((item, index) => (
+      {Array.isArray(items) && items.length > 0 ? items.map((item, index) => (
         <li key={index} className="flex items-start space-x-2">
           {icon}
           <span className="text-gray-600">{item}</span>
         </li>
-      ))}
+      )) : (
+        <li className="flex items-start space-x-2">
+          {icon}
+          <span className="text-gray-600">No information available</span>
+        </li>
+      )}
     </ul>
   </div>
 );

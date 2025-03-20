@@ -50,7 +50,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   
   const generateQuestions = async (force = false) => {
     // Prevent unnecessary API calls if questions already exist and force is not set
-    if (questions.length > 0 && hasGeneratedQuestions && !force) {
+    if (questions && questions.length > 0 && hasGeneratedQuestions && !force) {
       return;
     }
     
@@ -99,17 +99,44 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       
       const result = await apiService.questions.generate(jobType, requirements, 5);
       
+      console.log('API response:', JSON.stringify(result, null, 2));
+      console.log('Has data?', Boolean(result.data));
+      console.log('Has questions?', result.data && Boolean(result.data.questions));
+      console.log('Is Array?', result.data && result.data.questions && Array.isArray(result.data.questions));
+      
       if (result.success) {
-        console.log('Questions generated successfully:', result.data.questions);
-        setQuestions(result.data.questions);
-        setHasGeneratedQuestions(true);
+        console.log('Questions generated successfully:', result.data);
         
-        // Save questions to cache - only cache API-generated questions
-        questionsCache.setQuestions(jobType, requirements, result.data.questions);
+        // Verificar se questions existe na resposta
+        // Alguns resultados podem ter uma estrutura aninhada como result.data.data.questions
+        if (result.data && result.data.questions && Array.isArray(result.data.questions)) {
+          console.log('Questions array found directly in data:', result.data.questions.length);
+          setQuestions(result.data.questions);
+          setHasGeneratedQuestions(true);
+          
+          // Save questions to cache - only cache API-generated questions
+          questionsCache.setQuestions(jobType, requirements, result.data.questions);
+        } 
+        // Verificar se existe uma estrutura aninhada result.data.data.questions
+        else if (result.data && result.data.data && result.data.data.questions && Array.isArray(result.data.data.questions)) {
+          console.log('Questions array found in nested data:', result.data.data.questions.length);
+          setQuestions(result.data.data.questions);
+          setHasGeneratedQuestions(true);
+          
+          // Save questions to cache - only cache API-generated questions
+          questionsCache.setQuestions(jobType, requirements, result.data.data.questions);
+        }
+        else {
+          console.error('Response format changed: questions array not found in:', result.data);
+          setError('Invalid response format from server. Using default questions.');
+          setDefaultQuestions(false); // Don't cache default questions
+        }
         
-        // Update usage stats
-        if (result.data.usage) {
+        // Tentar obter usage stats (pode estar em result.data.usage ou result.data.data.usage)
+        if (result.data && result.data.usage) {
           setUsage(result.data.usage);
+        } else if (result.data && result.data.data && result.data.data.usage) {
+          setUsage(result.data.data.usage);
         }
       } else {
         console.error('Failed to generate questions:', result);
@@ -153,8 +180,13 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
 
   // Handle click on generate new questions button
   const handleGenerateNewClick = () => {
+    // Se questions for undefined, inicialize como um array vazio
+    if (!questions) {
+      setQuestions([]);
+    }
+    
     // If we already have questions and not at limit, show confirmation modal
-    if (questions.length > 0 && !hasLimitReached) {
+    if (questions && questions.length > 0 && !hasLimitReached) {
       setIsConfirmModalOpen(true);
     } else if (hasLimitReached) {
       // If at limit, show limit modal
@@ -185,7 +217,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         // Only generate questions if it's a new session and questions haven't been generated yet
         generateQuestions();
       }
-    } else if (questions.length === 0) {
+    } else if (!questions || questions.length === 0) {
       setDefaultQuestions(false); // Don't cache default questions
     }
   }, [jobType, requirements, isNewSession]);
@@ -252,7 +284,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         </div>
       ) : (
         <div className="space-y-4 mb-8">
-          {questions.map((question, index) => (
+          {questions && questions.length > 0 ? questions.map((question, index) => (
             <div
               key={index}
               className="bg-white/70 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all"
@@ -264,7 +296,11 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
                 <p className="text-gray-800 text-lg">{question}</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="text-center py-8">
+              <p className="text-gray-600">No questions available. Click "Generate New" to create questions.</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -295,7 +331,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 rounded-lg
                    hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
                    hover:scale-105 active:scale-95"
-          disabled={isLoading || questions.length === 0}
+          disabled={isLoading || !questions || questions.length === 0}
         >
           <span>Start Answering</span>
           <ArrowRight className="h-5 w-5" />

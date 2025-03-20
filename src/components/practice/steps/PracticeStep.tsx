@@ -77,7 +77,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
   };
 
   const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
+    if (questions && currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
       onNext();
@@ -113,11 +113,13 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
   
   // Check if all questions have been answered
   const allQuestionsAnswered = (): boolean => {
+    if (!questions || !questions.length) return false;
     return questions.every((_, index) => answers[index]?.trim?.());
   };
 
   // Total progress (percentage of answered questions)
   const calculateProgress = (): number => {
+    if (!questions || !questions.length) return 0;
     const answeredCount = Object.values(answers).filter(answer => answer?.trim()).length;
     return Math.round((answeredCount / questions.length) * 100);
   };
@@ -141,7 +143,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
         </div>
         <h2 className="text-3xl font-bold text-gray-800 mb-4">Practice Your Interview</h2>
         <p className="text-gray-600">
-          Question {currentQuestion + 1} of {questions.length}
+          Question {currentQuestion + 1} of {questions ? questions.length : 0}
         </p>
         
         {/* Progress bar */}
@@ -278,13 +280,13 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
                    hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
                    hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span>{currentQuestion < questions.length - 1 ? 'Next Question' : 'Submit Answers'}</span>
+          <span>{questions && currentQuestion < questions.length - 1 ? 'Next Question' : 'Submit Answers'}</span>
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>
       
       {/* Tip to complete all questions */}
-      {currentQuestion === questions.length - 1 && !allQuestionsAnswered() && (
+      {questions && currentQuestion === questions.length - 1 && !allQuestionsAnswered() && (
         <div className="mt-4 p-3 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 flex items-center">
           <AlertCircle className="h-5 w-5 mr-2" />
           <p className="text-sm">
