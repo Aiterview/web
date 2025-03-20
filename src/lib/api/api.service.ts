@@ -148,15 +148,29 @@ export const apiService = {
      */
     analyze: async (interviewData: { questions: string[], answers: string[] }): Promise<ApiResponse<any>> => {
       try {
+        console.log('Sending feedback analysis request:', interviewData);
         const response = await api.post('/api/feedback/analyze', interviewData);
+        
+        console.log('Raw feedback response:', response.data);
+        
+        // Validate the response format
+        if (!response.data || !response.data.success || !response.data.data) {
+          console.error('Invalid response format from feedback API:', response.data);
+          return {
+            success: false,
+            status: response.status,
+            error: 'Invalid response format from server',
+          };
+        }
         
         return {
           success: true,
           status: response.status,
-          data: response.data,
+          data: response.data.data,
         };
       } catch (error) {
         const axiosError = error as AxiosError;
+        console.error('Error in feedback analysis:', axiosError);
         
         return {
           success: false,

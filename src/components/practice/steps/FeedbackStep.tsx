@@ -39,8 +39,29 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       // Call API to analyze responses
       const result = await apiService.feedback.analyze(interviewData);
       
+      console.log('Feedback API response:', result);
+      
       if (result.success) {
-        setFeedback(result.data);
+        // Handle different response structures
+        let feedbackData = null;
+        
+        if (result.data && result.data.data) {
+          // Format: { success: true, data: { data: { strengths, improvements, ... } } }
+          feedbackData = result.data.data;
+        } else if (result.data) {
+          // Format: { success: true, data: { strengths, improvements, ... } }
+          feedbackData = result.data;
+        }
+        
+        // Validate the feedback data
+        if (feedbackData && Array.isArray(feedbackData.strengths) && Array.isArray(feedbackData.improvements)) {
+          setFeedback(feedbackData);
+        } else {
+          console.error('Invalid feedback data format:', feedbackData);
+          setError('Invalid feedback data received. Using local analysis instead.');
+          // Fallback to local analysis
+          generateLocalFeedback();
+        }
       } else {
         console.error('Failed to get feedback:', result);
         setError('Failed to analyze your responses. Using local analysis instead.');
