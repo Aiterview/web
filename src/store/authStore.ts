@@ -337,6 +337,7 @@ export const useAuthStore = create<IAuthState>()(
           loadingStore.getState().setLoading(true);
           set({ error: null });
           
+          // Enviar o email com link para atualização de senha
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/update-password`,
           });
@@ -359,13 +360,37 @@ export const useAuthStore = create<IAuthState>()(
           loadingStore.getState().setLoading(true);
           set({ error: null });
           
-          const { error } = await supabase.auth.updateUser({
+          console.log('Atualizando senha...');
+          
+          // Verificar se temos uma sessão válida
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log('Sessão atual:', sessionData);
+          
+          // Atualizar a senha
+          const { data, error } = await supabase.auth.updateUser({
             password: newPassword,
           });
           
           if (error) {
+            console.error('Erro ao atualizar senha:', error);
             set({ error: error.message });
             throw error;
+          }
+          
+          console.log('Senha atualizada com sucesso, usuário:', data.user);
+          
+          // Limpar qualquer token de recuperação/verificação na sessão
+          if (sessionData.session?.user?.aud === 'recovery') {
+            console.log('Fazendo logout após recuperação de senha');
+            // Depois de atualizar a senha, fazer logout para forçar um novo login com a nova senha
+            await supabase.auth.signOut();
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              accessToken: null,
+              refreshToken: null,
+              error: null 
+            });
           }
         } catch (error) {
           const authError = error as AuthError;

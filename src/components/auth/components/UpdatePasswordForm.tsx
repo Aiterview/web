@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/authStore";
 import { BrainCog } from "lucide-react";
+import { supabase } from "../../../lib/supabase/supabaseClient";
 
 const UpdatePasswordForm = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -9,26 +10,93 @@ const UpdatePasswordForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | ''>('');
-  const { updatePassword, error: authError, setError: setAuthError } = useAuthStore();
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const { updatePassword, error: authError, setError: setAuthError, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [sessionVerified, setSessionVerified] = useState(false);
+
+  // Debug: Mostrar URL e hash no console para troubleshooting
+  useEffect(() => {
+    console.log('URL e parâmetros:', {
+      pathname: location.pathname,
+      search: location.search,
+      hash: location.hash,
+      href: window.location.href
+    });
+  }, [location]);
+
+  // Verificar se temos um token de recuperação na URL
+  useEffect(() => {
+    const checkRecoveryToken = async () => {
+      try {
+        console.log("URL atual:", window.location.href);
+        
+        // Extrair o token de recuperação (format #access_token=XXX)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        // Verificar se temos tokens de acesso e tipo de recuperação
+        if (accessToken && type === 'recovery') {
+          console.log("Token de recuperação encontrado na URL");
+          
+          // Configurar a sessão com o token de recuperação
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+          
+          if (error) {
+            console.error("Erro ao configurar sessão de recuperação:", error);
+            setErrorMessage("Link de recuperação inválido. Por favor, solicite um novo link.");
+          } else {
+            console.log("Sessão de recuperação configurada:", data);
+            // Limpar a URL para remover os parâmetros sensíveis
+            window.history.replaceState({}, document.title, window.location.pathname);
+            setSessionVerified(true);
+          }
+        } else if (isAuthenticated) {
+          // Se o usuário já está autenticado, permitir a atualização de senha
+          setSessionVerified(true);
+        } else {
+          console.log("Sem token de recuperação na URL ou usuário não autenticado");
+          navigate('/auth/login');
+        }
+      } catch (err) {
+        console.error("Erro ao verificar o token de recuperação:", err);
+        setErrorMessage("Erro ao verificar a sessão. Por favor, tente novamente.");
+      }
+    };
+    
+    checkRecoveryToken();
+  }, [navigate, isAuthenticated]);
 
   // Limpar erros do store ao montar
   useEffect(() => {
     setAuthError(null);
+    return () => {
+      setAuthError(null);
+    };
   }, [setAuthError]);
 
-  // Monitorar erros do store
+  // Atualizar mensagem de erro quando o authError mudar
   useEffect(() => {
     if (authError) {
       setErrorMessage(authError);
     }
   }, [authError]);
 
+  // Atualizar a força da senha conforme o usuário digita
+  useEffect(() => {
+    checkPasswordStrength(newPassword);
+  }, [newPassword]);
+
   // Validar força da senha
   const checkPasswordStrength = (password: string) => {
     if (password.length === 0) {
-      setPasswordStrength('');
+      setPasswordStrength(0);
       return;
     }
     
@@ -44,67 +112,75 @@ const UpdatePasswordForm = () => {
       (hasSpecial ? 1 : 0) + 
       (password.length >= 8 ? 1 : 0);
     
-    if (strength < 3) {
-      setPasswordStrength('weak');
-    } else if (strength < 5) {
-      setPasswordStrength('medium');
-    } else {
-      setPasswordStrength('strong');
-    }
+    setPasswordStrength(Math.min(Math.floor(strength / 5 * 4), 3));
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const password = e.target.value;
-    setNewPassword(password);
-    checkPasswordStrength(password);
+    setNewPassword(e.target.value);
+    setErrorMessage('');
   };
 
-  const validatePassword = () => {
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    setErrorMessage('');
+  };
+
+  const validateForm = (): boolean => {
     // Limpar mensagens anteriores
     setErrorMessage("");
-    
+
     if (newPassword.length < 8) {
-      return "A senha deve ter pelo menos 8 caracteres.";
+      setErrorMessage("A senha deve ter pelo menos 8 caracteres.");
+      return false;
     }
     if (!/[A-Z]/.test(newPassword)) {
-      return "A senha deve conter pelo menos uma letra maiúscula.";
+      setErrorMessage("A senha deve conter pelo menos uma letra maiúscula.");
+      return false;
     }
     if (!/[a-z]/.test(newPassword)) {
-      return "A senha deve conter pelo menos uma letra minúscula.";
+      setErrorMessage("A senha deve conter pelo menos uma letra minúscula.");
+      return false;
     }
     if (!/[0-9]/.test(newPassword)) {
-      return "A senha deve conter pelo menos um número.";
+      setErrorMessage("A senha deve conter pelo menos um número.");
+      return false;
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
-      return "A senha deve conter pelo menos um caractere especial.";
+      setErrorMessage("A senha deve conter pelo menos um caractere especial.");
+      return false;
     }
     if (newPassword !== confirmPassword) {
-      return "As senhas não coincidem.";
+      setErrorMessage("As senhas não coincidem.");
+      return false;
     }
-    return "";
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    const validationError = validatePassword();
-    if (validationError) {
-      setErrorMessage(validationError);
+    
+    if (!sessionVerified) {
+      setErrorMessage("É necessária uma sessão válida para atualizar a senha.");
       return;
     }
+
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
       await updatePassword(newPassword);
-      setSuccessMessage(
-        "Senha atualizada com sucesso! Redirecionando para login..."
-      );
-      // Redirecionar para a página de autenticação após 3 segundos
-      setTimeout(() => navigate("/auth"), 3000);
+      setSuccessMessage("Senha atualizada com sucesso! Redirecionando para login...");
+      // Resetar o formulário
+      setNewPassword('');
+      setConfirmPassword('');
+      
+      // Redirecionar para o login após atualização bem-sucedida
+      setTimeout(() => {
+        navigate('/auth/login');
+      }, 2000);
     } catch (err) {
+      console.error('Erro ao atualizar senha:', err);
       // O erro principal já deve ter sido capturado pelo effect do authError
       if (!authError) {
         setErrorMessage("Falha ao atualizar a senha. Por favor, tente novamente.");
@@ -114,152 +190,121 @@ const UpdatePasswordForm = () => {
     }
   };
 
+  const getPasswordStrengthLabel = () => {
+    if (passwordStrength <= 1) return "Fraca";
+    if (passwordStrength <= 2) return "Média";
+    return "Forte";
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div
-        className="max-w-md w-full bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden
-                    border border-white/20 hover:shadow-2xl transition-shadow duration-500"
-      >
-        <div className="p-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="p-2 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl">
-                <Link to="/">
-                  <BrainCog className="h-8 w-8 text-white" />
-                </Link>
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Atualizar sua senha
-            </h2>
-            <p className="text-gray-600">Digite sua nova senha</p>
+    <div className="w-full max-w-md mx-auto">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden p-8 space-y-6">
+        <div className="mb-8 text-center">
+          <div className="flex justify-center mb-2">
+            <BrainCog size={36} className="text-indigo-600" />
           </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Atualizar sua senha
+          </h2>
+          <p className="text-gray-600">Digite sua nova senha</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {errorMessage && (
-              <div className="bg-red-100 border-l-4 border-red-500 p-4 text-red-700 rounded">
-                {errorMessage}
+        {errorMessage && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <div className="flex">
+              <div>
+                <p className="text-sm text-red-700">{errorMessage}</p>
               </div>
-            )}
-            {successMessage && (
-              <div className="bg-green-100 border-l-4 border-green-500 p-4 text-green-700 rounded">
-                {successMessage}
+            </div>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6">
+            <div className="flex">
+              <div>
+                <p className="text-sm text-green-700">{successMessage}</p>
               </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="new-password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Nova Senha
-              </label>
-              <input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={handlePasswordChange}
-                placeholder="Digite sua nova senha"
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                required
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
-              
-              {passwordStrength && (
-                <div className="mt-2 flex items-center">
-                  <div className="flex w-full space-x-1">
-                    <div 
-                      className={`h-1 flex-1 rounded-full ${
-                        passwordStrength === 'weak' 
-                          ? 'bg-red-500' 
-                          : passwordStrength === 'medium' 
-                          ? 'bg-yellow-500' 
-                          : 'bg-green-500'
-                      }`}
-                    />
-                    <div 
-                      className={`h-1 flex-1 rounded-full ${
-                        passwordStrength === 'weak' 
-                          ? 'bg-gray-200' 
-                          : passwordStrength === 'medium' 
-                          ? 'bg-yellow-500' 
-                          : 'bg-green-500'
-                      }`}
-                    />
-                    <div 
-                      className={`h-1 flex-1 rounded-full ${
-                        passwordStrength === 'strong' ? 'bg-green-500' : 'bg-gray-200'
-                      }`}
-                    />
-                  </div>
-                  <span className="ml-2 text-xs text-gray-500">
-                    {passwordStrength === 'weak'
-                      ? 'Fraca'
-                      : passwordStrength === 'medium'
-                      ? 'Média'
-                      : 'Forte'}
-                  </span>
-                </div>
-              )}
-              
-              <p className="mt-1 text-xs text-gray-500">
-                A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.
-              </p>
             </div>
+          </div>
+        )}
 
-            <div>
-              <label
-                htmlFor="confirm-password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirmar Senha
-              </label>
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Digite novamente sua senha"
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                required
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full bg-indigo-600 text-white py-2 px-4 rounded-lg shadow-lg
-          hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-          ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="new-password"
+              className="block text-sm font-medium text-gray-700"
             >
-              {isLoading ? "Atualizando..." : "Atualizar Senha"}
-            </button>
+              Nova Senha
+            </label>
+            <input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={handlePasswordChange}
+              placeholder="Digite sua nova senha"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              required
+              disabled={isLoading || !!successMessage}
+              autoComplete="new-password"
+            />
             
-            <p className="text-center text-sm text-gray-500 mt-4">
-              Lembrou sua senha?{" "}
-              <Link to="/auth" className="text-indigo-600 hover:text-indigo-500 font-medium">
-                Faça login
-              </Link>
-            </p>
-          </form>
-        </div>
-
-        {/* Bottom Banner */}
-        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white p-6">
-          <div className="flex items-center justify-center space-x-4">
-            <div className="text-center">
-              <h3 className="font-semibold text-lg">
-                Inicie sua jornada de prática de entrevistas
-              </h3>
-              <p className="text-white/80">
-                Junte-se a mais de 10.000 usuários que melhoraram suas habilidades
-              </p>
-            </div>
+            {newPassword && (
+              <div className="mt-2 flex items-center">
+                <div className="flex w-full space-x-1">
+                  <div 
+                    className={`h-1 flex-1 rounded-full ${
+                      passwordStrength >= 1 ? 'bg-red-500' : 'bg-gray-200'
+                    }`}
+                  />
+                  <div 
+                    className={`h-1 flex-1 rounded-full ${
+                      passwordStrength >= 2 ? 'bg-yellow-500' : 'bg-gray-200'
+                    }`}
+                  />
+                  <div 
+                    className={`h-1 flex-1 rounded-full ${
+                      passwordStrength >= 3 ? 'bg-green-500' : 'bg-gray-200'
+                    }`}
+                  />
+                </div>
+                <span className="ml-2 text-xs text-gray-500">
+                  {getPasswordStrengthLabel()}
+                </span>
+              </div>
+            )}
           </div>
-        </div>
+
+          <div>
+            <label
+              htmlFor="confirm-password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Confirmar Senha
+            </label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              placeholder="Digite novamente sua senha"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              required
+              disabled={isLoading || !!successMessage}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading || !!successMessage || !sessionVerified}
+            className={`w-full bg-indigo-600 text-white py-2 px-4 rounded-lg shadow-lg
+         hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+         ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+          >
+            {isLoading ? "Atualizando..." : "Atualizar Senha"}
+          </button>
+        </form>
       </div>
     </div>
   );

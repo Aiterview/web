@@ -9,13 +9,20 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Pega o hash da URL para processamento do Supabase
+        // Pega o hash e os parâmetros da URL para processamento
         const { hash, search } = window.location;
+
+        // Verificar se é um link de recuperação de senha
+        if (hash && hash.includes('type=recovery')) {
+          // Redirecionar para a página de atualização de senha
+          navigate('/update-password', { replace: true });
+          return;
+        }
 
         // Se acessou diretamente a página sem parâmetros, verificamos a sessão atual
         // em vez de lançar um erro
         if (!hash && !search) {
-          // Verifica se já existe uma sessão autenticada
+          // Verificar se é uma sessão de recuperação de senha
           const { data, error } = await supabase.auth.getSession();
           
           if (error) {
@@ -23,6 +30,12 @@ const AuthCallback = () => {
           }
           
           if (data.session) {
+            // Verificar se é uma sessão de recuperação de senha
+            if (data.session.user?.aud === 'recovery') {
+              navigate('/update-password', { replace: true });
+              return;
+            }
+            
             // Se já está autenticado, redireciona para o dashboard
             navigate('/dashboard', { replace: true });
           } else {
@@ -32,7 +45,7 @@ const AuthCallback = () => {
           return;
         }
 
-        // Processa a resposta da autenticação
+        // Processa a resposta da autenticação regular
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -40,7 +53,13 @@ const AuthCallback = () => {
         }
 
         if (data.session) {
-          // Se temos uma sessão, o login foi bem-sucedido
+          // Verificar novamente se esta é uma sessão de recuperação de senha
+          if (data.session.user?.aud === 'recovery') {
+            navigate('/update-password', { replace: true });
+            return;
+          }
+          
+          // Se temos uma sessão normal, o login foi bem-sucedido
           // Redirecionar para o dashboard
           navigate('/dashboard', { replace: true });
         } else {

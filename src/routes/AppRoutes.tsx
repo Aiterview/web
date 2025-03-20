@@ -15,7 +15,6 @@ import { useAuthStore } from '../store/authStore';
 import PlanAndBillingPage from '../components/dashboard/PlanAndBillingPage';
 import HelpAndSupportPage from '../components/dashboard/HelpAndSupportPage';
 import UpdatePasswordForm from '../components/auth/components/UpdatePasswordForm';
-import { PasswordRecoveryRoute } from './PasswordRecoveryRoute';
 import AuthCallback from '../components/auth/AuthCallback';
 
 const AppRoutes = () => {
@@ -36,15 +35,16 @@ const AppRoutes = () => {
 
       {/* Auth Callback Route */}
       <Route path="/auth/callback" element={<AuthCallback />} />
-
-      <Route
-        path="/update-password"
-        element={
-          <PasswordRecoveryRoute>
-            <UpdatePasswordForm />
-          </PasswordRecoveryRoute>
-        }
-      />
+      
+      {/* Formulário de atualização de senha - acessível diretamente para recuperação */}
+      <Route path="/update-password" element={<UpdatePasswordForm />} />
+      
+      {/* Rotas para capturar todos os formatos possíveis de URL de recuperação */}
+      <Route path="/*type=recovery" element={<Navigate to="/update-password" replace />} />
+      <Route path="/recovery" element={<Navigate to="/update-password" replace />} />
+      <Route path="/reset-password" element={<Navigate to="/update-password" replace />} />
+      <Route path="/auth/recovery" element={<Navigate to="/update-password" replace />} />
+      <Route path="/auth/reset-password" element={<Navigate to="/update-password" replace />} />
 
       {/* Protected Dashboard Routes */}
       <Route
