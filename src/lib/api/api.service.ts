@@ -1,12 +1,19 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import { useAuthStore } from '../../store/authStore';
 
-// Interface de estatísticas de uso
+// Usage statistics interface
 export interface UsageStats {
   current: number;
   limit: number;
   isPremium: boolean;
   remaining: number;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  status: number;
+  data?: T;
+  error?: string;
 }
 
 // Create a base API instance
@@ -65,7 +72,7 @@ export const apiService = {
     /**
      * Generate interview questions based on job type and requirements
      */
-    generate: async (jobType: string, requirements: string, numberOfQuestions: number = 5) => {
+    generate: async (jobType: string, requirements: string, numberOfQuestions: number = 5): Promise<ApiResponse<any>> => {
       try {
         const response = await api.post('/api/questions/generate', {
           jobType,
@@ -73,10 +80,19 @@ export const apiService = {
           numberOfQuestions
         });
         
-        return response.data;
+        return {
+          success: true,
+          status: response.status,
+          data: response.data,
+        };
       } catch (error) {
-        console.error('Failed to generate questions:', error);
-        throw error;
+        const axiosError = error as AxiosError;
+        
+        return {
+          success: false,
+          status: axiosError.response?.status || 500,
+          error: axiosError.message,
+        };
       }
     }
   },
@@ -86,13 +102,23 @@ export const apiService = {
     /**
      * Get usage statistics for the current user
      */
-    getStats: async (): Promise<UsageStats> => {
+    getStats: async (): Promise<ApiResponse<any>> => {
       try {
         const response = await api.get('/api/usage/stats');
-        return response.data.data;
+        
+        return {
+          success: true,
+          status: response.status,
+          data: response.data,
+        };
       } catch (error) {
-        console.error('Failed to get usage stats:', error);
-        throw error;
+        const axiosError = error as AxiosError;
+        
+        return {
+          success: false,
+          status: axiosError.response?.status || 500,
+          error: axiosError.message,
+        };
       }
     }
   },
@@ -111,7 +137,33 @@ export const apiService = {
       console.error('API request failed:', error);
       throw error;
     }
-  }
+  },
+  
+  // Feedback API
+  feedback: {
+    /**
+     * Analyze interview responses and provide feedback
+     */
+    analyze: async (interviewData: { questions: string[], answers: string[] }): Promise<ApiResponse<any>> => {
+      try {
+        const response = await api.post('/api/feedback/analyze', interviewData);
+        
+        return {
+          success: true,
+          status: response.status,
+          data: response.data,
+        };
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        
+        return {
+          success: false,
+          status: axiosError.response?.status || 500,
+          error: axiosError.message,
+        };
+      }
+    },
+  },
 };
 
 export default apiService; 

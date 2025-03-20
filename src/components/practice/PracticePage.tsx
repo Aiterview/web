@@ -56,6 +56,21 @@ const PracticePage = () => {
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
+      
+      // If moving to the feedback step, check if all answers are complete
+      if (currentStep === 3) {
+        const answeredCount = Object.keys(answers).length;
+        if (answeredCount < questions.length) {
+          // Fill in empty answers to avoid errors
+          const updatedAnswers = { ...answers };
+          for (let i = 0; i < questions.length; i++) {
+            if (!updatedAnswers[i]) {
+              updatedAnswers[i] = "No answer provided";
+            }
+          }
+          setAnswers(updatedAnswers);
+        }
+      }
     }
     
     // If moving from Feedback (last step) to Job Type (first step)
@@ -84,6 +99,11 @@ const PracticePage = () => {
   };
 
   const CurrentStepComponent = steps[currentStep].component;
+
+  // Calculate overall practice progress
+  const calculateProgress = () => {
+    return ((currentStep + 1) / steps.length) * 100;
+  };
 
   return (
     <div className="min-h-screen bg-white pt-20 pb-12 rounded-xl shadow-sm">
@@ -114,7 +134,7 @@ const PracticePage = () => {
           <div className="h-2 bg-gray-200 rounded-full">
             <div
               className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full transition-all duration-300"
-              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+              style={{ width: `${calculateProgress()}%` }}
             />
           </div>
         </div>

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, MessageSquare, RotateCw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MessageSquare, RotateCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { usePractice } from '../../../context/PracticeContext';
 import { useAuthStore } from '../../../store/authStore';
 import { useUsageStore } from '../../../store/usageStore';
 import apiService from '../../../lib/api/api.service';
+import questionsCache from '../../../lib/cache/questionsCache';
 import LimitReachedModal from '../../shared/LimitReachedModal';
+import GenerateConfirmModal from '../../shared/GenerateConfirmModal';
 
 interface QuestionsStepProps {
   questions: string[];
@@ -36,6 +38,8 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   const { usage, hasLimitReached, fetchUsage, setUsage } = useUsageStore();
   const [hasGeneratedQuestions, setHasGeneratedQuestions] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [usingCachedQuestions, setUsingCachedQuestions] = useState(false);
   
   // Fetch usage stats on component mount
   useEffect(() => {
@@ -50,6 +54,18 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       return;
     }
     
+    // Check if questions are in cache and no force regeneration
+    if (!force) {
+      const cachedQuestions = questionsCache.getQuestions(jobType, requirements);
+      if (cachedQuestions && cachedQuestions.length > 0) {
+        console.log('Using cached questions for:', jobType, requirements);
+        setQuestions(cachedQuestions);
+        setHasGeneratedQuestions(true);
+        setUsingCachedQuestions(true);
+        return;
+      }
+    }
+    
     // Check if usage limit is reached
     if (hasLimitReached) {
       setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
@@ -59,11 +75,12 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     
     setIsLoading(true);
     setError(null);
+    setUsingCachedQuestions(false);
     
     // Check if API is connected
     if (apiStatus && !apiStatus.isConnected) {
       setError(`API connection issue: ${apiStatus.message}. Using default questions.`);
-      setDefaultQuestions();
+      setDefaultQuestions(false); // Don't cache default questions
       setIsLoading(false);
       return;
     }
@@ -71,7 +88,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     // Check if user is authenticated
     if (!isAuthenticated) {
       setError('Authentication required. Please log in again.');
-      setDefaultQuestions();
+      setDefaultQuestions(false); // Don't cache default questions
       setIsLoading(false);
       return;
     }
@@ -87,6 +104,9 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         setQuestions(result.data.questions);
         setHasGeneratedQuestions(true);
         
+        // Save questions to cache - only cache API-generated questions
+        questionsCache.setQuestions(jobType, requirements, result.data.questions);
+        
         // Update usage stats
         if (result.data.usage) {
           setUsage(result.data.usage);
@@ -94,7 +114,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       } else {
         console.error('Failed to generate questions:', result);
         setError('Failed to generate questions. Please try again.');
-        setDefaultQuestions();
+        setDefaultQuestions(false); // Don't cache default questions
       }
     } catch (err: any) {
       console.error('Error generating questions:', err);
@@ -102,44 +122,75 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       // Check if error is due to limit reached
       if (err.response && err.response.status === 403 && err.response.data?.data?.limitReached) {
         setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
+        setIsLimitModalOpen(true);
         setHasGeneratedQuestions(true); // Prevent further attempts
       } else {
         setError(`Failed to generate questions: ${err instanceof Error ? err.message : 'Unknown error'}. Using default questions.`);
-        setDefaultQuestions();
+        setDefaultQuestions(false); // Don't cache default questions
       }
     } finally {
       setIsLoading(false);
     }
   };
   
-  const setDefaultQuestions = () => {
-    setQuestions([
-      'Can you describe a challenging project you worked on and how you handled it?',
+  const setDefaultQuestions = (shouldCache = true) => {
+    const defaultQuestions = [
+      'Can you describe a challenging project you worked on and how you approached it?',
       'How do you stay updated with the latest industry trends and technologies?',
       'What is your approach to solving complex technical problems?',
       'How do you handle disagreements with team members?',
       'Where do you see yourself professionally in 5 years?',
-    ]);
+    ];
+    
+    setQuestions(defaultQuestions);
     setHasGeneratedQuestions(true);
+    
+    // Only cache if explicitly requested - typically, we don't want to cache default questions
+    if (shouldCache) {
+      questionsCache.setQuestions(jobType, requirements, defaultQuestions);
+    }
+  };
+
+  // Handle click on generate new questions button
+  const handleGenerateNewClick = () => {
+    // If we already have questions and not at limit, show confirmation modal
+    if (questions.length > 0 && !hasLimitReached) {
+      setIsConfirmModalOpen(true);
+    } else if (hasLimitReached) {
+      // If at limit, show limit modal
+      setIsLimitModalOpen(true);
+    } else {
+      // Otherwise, generate new questions directly
+      generateQuestions(true);
+    }
   };
 
   useEffect(() => {
     if (jobType && requirements) {
-      // If API is disconnected, set default questions directly
-      if (apiStatus && !apiStatus.isConnected) {
+      // Try to get questions from cache first
+      const cachedQuestions = questionsCache.getQuestions(jobType, requirements);
+      
+      if (cachedQuestions && cachedQuestions.length > 0) {
+        console.log('Using cached questions');
+        setQuestions(cachedQuestions);
+        setHasGeneratedQuestions(true);
+        setUsingCachedQuestions(true);
+      }
+      // If API is disconnected, set default questions directly without caching
+      else if (apiStatus && !apiStatus.isConnected) {
         console.warn('API not connected, using default questions');
-        setDefaultQuestions();
+        setDefaultQuestions(false); // Don't cache default questions
         setError(`API connection issue: ${apiStatus.message}. Using default questions.`);
       } else if (isNewSession && !hasGeneratedQuestions) {
         // Only generate questions if it's a new session and questions haven't been generated yet
         generateQuestions();
       }
     } else if (questions.length === 0) {
-      setDefaultQuestions();
+      setDefaultQuestions(false); // Don't cache default questions
     }
   }, [jobType, requirements, isNewSession]);
 
-  // Verificar o limite quando o componente é montado ou quando usage muda
+  // Check limit when component mounts or when usage changes
   useEffect(() => {
     if (hasLimitReached) {
       setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
@@ -170,6 +221,16 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
                 ({usage.remaining} remaining)
               </p>
             )}
+          </div>
+        )}
+        
+        {/* Cache indicator */}
+        {usingCachedQuestions && (
+          <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
+            <p className="text-sm flex items-center">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Using cached questions. Generating new questions will consume 1 credit.
+            </p>
           </div>
         )}
         
@@ -219,7 +280,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         </button>
 
         <button
-          onClick={() => generateQuestions(true)} // Force new generation
+          onClick={handleGenerateNewClick}
           className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-indigo-500
                   text-indigo-600 hover:bg-indigo-50 transition-colors"
           disabled={isLoading || (apiStatus ? !apiStatus.isConnected : false) || hasLimitReached}
@@ -245,6 +306,13 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       <LimitReachedModal 
         isOpen={isLimitModalOpen} 
         onClose={() => setIsLimitModalOpen(false)} 
+      />
+      
+      {/* Confirm Generation Modal */}
+      <GenerateConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={() => generateQuestions(true)}
       />
     </div>
   );
