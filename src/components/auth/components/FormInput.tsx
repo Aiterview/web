@@ -11,6 +11,7 @@ interface FormInputProps {
   icon: LucideIcon;
   required?: boolean;
   disabled?: boolean;
+  autoComplete?: string;
 }
 
 const FormInput = ({
@@ -22,6 +23,8 @@ const FormInput = ({
   placeholder,
   icon: Icon,
   required = true,
+  disabled = false,
+  autoComplete,
 }: FormInputProps) => {
   return (
     <div>
@@ -42,6 +45,8 @@ const FormInput = ({
                    bg-white/80 backdrop-blur-sm"
           placeholder={placeholder}
           required={required}
+          disabled={disabled}
+          autoComplete={autoComplete}
         />
       </div>
     </div>

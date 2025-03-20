@@ -1,22 +1,35 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase/supabaseClient';
 import { loadingStore } from './loadingStore';
 import { AuthProvider } from '../types/authProvider';
+
+interface UserData {
+  email: string;
+  name?: string;
+  provider?: AuthProvider;
+  emailVerified?: boolean;
+  id?: string;
+}
+
+interface AuthError extends Error {
+  status?: number;
+  message: string;
+}
 
 interface IAuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   accessToken: string | null;
-  user: null | {
-    email: string;
-    name?: string;
-    provider?: AuthProvider;
-    emailVerified?: boolean;
-  };
+  refreshToken: string | null;
+  user: UserData | null;
+  error: string | null;
   setAuthenticated: (value: boolean) => void;
   setLoading: (value: boolean) => void;
   setUser: (user: IAuthState['user']) => void;
   setAccessToken: (token: string | null) => void;
+  setRefreshToken: (token: string | null) => void;
+  setError: (error: string | null) => void;
   logout: () => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
@@ -25,195 +38,417 @@ interface IAuthState {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
+  refreshSession: () => Promise<boolean>;
 }
 
-export const useAuthStore = create<IAuthState>((set, get) => ({
-  isAuthenticated: false,
-  isLoading: true,
-  accessToken: null,
-  user: null,
-  setAuthenticated: value => set({ isAuthenticated: value }),
-  setLoading: value => set({ isLoading: value }),
-  setUser: user => set({ user, isAuthenticated: true }),
-  setAccessToken: token => set({ accessToken: token }),
-  logout: () => set({ user: null, isAuthenticated: false, accessToken: null }),
-  signInWithEmail: async (email, password) => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      if (data.user) {
-        const emailVerified = data.user.email_confirmed_at ? true : false
-        set({
-          user: {
-            email: data.user.email || '',
-            name: data.user.user_metadata?.name,
-            provider: AuthProvider.EMAIL,
-            emailVerified
-          },
-          accessToken: data.session?.access_token || null,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      }
-    } finally {
-      loadingStore.getState().setLoading(false);
+export const useAuthStore = create<IAuthState>()(
+  persist(
+    (set, get) => ({
+      isAuthenticated: false,
+      isLoading: true,
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      error: null,
+      setAuthenticated: value => set({ isAuthenticated: value }),
+      setLoading: value => set({ isLoading: value }),
+      setUser: user => set({ user, isAuthenticated: !!user }),
+      setAccessToken: token => set({ accessToken: token }),
+      setRefreshToken: token => set({ refreshToken: token }),
+      setError: error => set({ error }),
+      logout: () => set({ 
+        user: null, 
+        isAuthenticated: false, 
+        accessToken: null, 
+        refreshToken: null, 
+        error: null 
+      }),
+      
+      signInWithEmail: async (email, password) => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ error: null });
+          
+          const { data, error } = await supabase.auth.signInWithPassword({ 
+            email, 
+            password 
+          });
+          
+          if (error) {
+            set({ error: error.message });
+            throw error;
+          }
+          
+          if (data.user) {
+            const emailVerified = !!data.user.email_confirmed_at;
+            set({
+              user: {
+                id: data.user.id,
+                email: data.user.email || '',
+                name: data.user.user_metadata?.name,
+                provider: AuthProvider.EMAIL,
+                emailVerified
+              },
+              accessToken: data.session?.access_token || null,
+              refreshToken: data.session?.refresh_token || null,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+          }
+        } catch (error) {
+          const authError = error as AuthError;
+          set({ 
+            error: authError.message,
+            isLoading: false 
+          });
+          throw authError;
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+      
+      signUpWithEmail: async (email, password) => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ error: null });
+          
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
+          });
+
+          if (error) {
+            set({ error: error.message });
+            throw error;
+          }
+
+          if (!data.user?.identities?.length) {
+            const conflictError = new Error('An account with this email already exists');
+            set({ error: conflictError.message });
+            throw conflictError;
+          }
+
+          if (data.user) {
+            const emailVerified = !!data.user.email_confirmed_at;
+            set({
+              user: {
+                id: data.user.id,
+                email: data.user.email || '',
+                name: data.user.user_metadata?.name,
+                provider: AuthProvider.EMAIL,
+                emailVerified
+              },
+              accessToken: data.session?.access_token || null,
+              refreshToken: data.session?.refresh_token || null,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+          }
+        } catch (error) {
+          const authError = error as AuthError;
+          set({ 
+            error: authError.message,
+            isLoading: false 
+          });
+          throw authError;
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+      
+      signOut: async () => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ error: null });
+          
+          const { error } = await supabase.auth.signOut();
+          
+          if (error && !error.message?.includes('Auth session missing')) {
+            set({ error: error.message });
+            throw error;
+          }
+          
+          set({ 
+            user: null, 
+            isAuthenticated: false, 
+            isLoading: false, 
+            accessToken: null,
+            refreshToken: null,
+            error: null 
+          });
+        } catch (error) {
+          // Ainda limpamos o estado mesmo com erro para evitar problemas de sessão
+          set({ 
+            user: null, 
+            isAuthenticated: false, 
+            isLoading: false, 
+            accessToken: null,
+            refreshToken: null 
+          });
+          
+          const authError = error as AuthError;
+          set({ error: authError.message });
+          throw authError;
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+      
+      refreshSession: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          
+          const { data, error } = await supabase.auth.refreshSession();
+          
+          if (error) {
+            set({ error: error.message });
+            return false;
+          }
+          
+          if (data.session) {
+            set({
+              accessToken: data.session.access_token,
+              refreshToken: data.session.refresh_token,
+              isAuthenticated: true,
+              error: null
+            });
+            
+            if (data.user) {
+              const emailVerified = !!data.user.email_confirmed_at;
+              set({
+                user: {
+                  id: data.user.id,
+                  email: data.user.email || '',
+                  name: data.user.user_metadata?.name,
+                  provider: determineProvider(data.user),
+                  emailVerified
+                }
+              });
+            }
+            
+            return true;
+          }
+          
+          return false;
+        } catch (error) {
+          const authError = error as AuthError;
+          set({ 
+            error: authError.message,
+            isLoading: false 
+          });
+          return false;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      
+      initializeAuth: async () => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ isLoading: true, error: null });
+          
+          const {
+            data: { session },
+            error
+          } = await supabase.auth.getSession();
+          
+          if (error) {
+            set({ error: error.message });
+            throw error;
+          }
+          
+          if (session?.user) {
+            const emailVerified = !!session.user.email_confirmed_at;
+            set({
+              user: {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata?.name,
+                provider: determineProvider(session.user),
+                emailVerified
+              },
+              accessToken: session.access_token || null,
+              refreshToken: session.refresh_token || null,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+          } else {
+            set({ isLoading: false });
+          }
+        } catch (error) {
+          console.error('Error initializing auth:', error);
+          const authError = error as AuthError;
+          set({ 
+            error: authError.message,
+            isLoading: false 
+          });
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+      
+      changePassword: async (currentPassword, newPassword) => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ error: null });
+          
+          const currentUser = get().user;
+          if (!currentUser?.email) {
+            const noUserError = new Error('No authenticated user found');
+            set({ error: noUserError.message });
+            throw noUserError;
+          }
+
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: currentUser.email,
+            password: currentPassword,
+          });
+
+          if (signInError) {
+            set({ error: signInError.message });
+            throw signInError;
+          }
+
+          const { error } = await supabase.auth.updateUser({
+            password: newPassword,
+          });
+
+          if (error) {
+            set({ error: error.message });
+            throw error;
+          }
+        } catch (error) {
+          const authError = error as AuthError;
+          set({ error: authError.message });
+          throw authError;
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+      
+      resetPassword: async (email: string) => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ error: null });
+          
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/update-password`,
+          });
+          
+          if (error) {
+            set({ error: error.message });
+            throw error;
+          }
+        } catch (error) {
+          const authError = error as AuthError;
+          set({ error: authError.message });
+          throw authError;
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+      
+      updatePassword: async (newPassword: string) => {
+        try {
+          loadingStore.getState().setLoading(true);
+          set({ error: null });
+          
+          const { error } = await supabase.auth.updateUser({
+            password: newPassword,
+          });
+          
+          if (error) {
+            set({ error: error.message });
+            throw error;
+          }
+        } catch (error) {
+          const authError = error as AuthError;
+          set({ error: authError.message });
+          throw authError;
+        } finally {
+          loadingStore.getState().setLoading(false);
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken
+      }),
     }
-  },
-  signUpWithEmail: async (email, password) => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
+  )
+);
 
-      if (error) throw error;
+// Função auxiliar para determinar o provedor da autenticação
+function determineProvider(user: any): AuthProvider {
+  if (!user) return AuthProvider.EMAIL;
+  
+  // Verifica se há providers na app_metadata
+  if (user.app_metadata?.providers?.length) {
+    const providers = user.app_metadata.providers;
+    
+    // Filtra 'email' se houver múltiplos providers
+    const cleanedProviders = providers.filter((p: string) => p !== 'email');
+    
+    // Retorna o primeiro provider não-email, ou EMAIL se não houver outros
+    return (cleanedProviders.length > 0 ? cleanedProviders[0] : AuthProvider.EMAIL) as AuthProvider;
+  }
+  
+  // Verifica se há um provider específico definido
+  if (user.app_metadata?.provider) {
+    return user.app_metadata.provider as AuthProvider;
+  }
+  
+  return AuthProvider.EMAIL;
+}
 
-      if (!data.user?.identities?.length) {
-        throw new Error('An account with this email already exists');
-      }
-
-      if (data.user) {
-        const emailVerified = data.user.email_confirmed_at ? true : false
-        set({
-          user: {
-            email: data.user.email || '',
-            name: data.user.user_metadata?.name,
-            provider: AuthProvider.EMAIL,
-            emailVerified
-          },
-          accessToken: data.session?.access_token || null,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      }
-    } finally {
-      loadingStore.getState().setLoading(false);
-    }
-  },
-  signOut: async () => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error && !error.message?.includes('Auth session missing')) {
-        throw error;
-      }
-      set({ user: null, isAuthenticated: false, isLoading: false, accessToken: null });
-    } catch (error) {
-      set({ user: null, isAuthenticated: false, isLoading: false, accessToken: null });
-      throw error;
-    } finally {
-      loadingStore.getState().setLoading(false);
-    }
-  },
-  initializeAuth: async () => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        const provider = session.user.app_metadata?.provider;
-        set({
-          user: {
-            email: session.user.email || '',
-            name: session.user.user_metadata?.name,
-            provider: provider as AuthProvider,
-          },
-          accessToken: session.access_token || null,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      }
-      set({ isLoading: false });
-    } catch (error) {
-      console.error('Error initializing auth:', error);
-      set({ isLoading: false });
-    } finally {
-      loadingStore.getState().setLoading(false);
-    }
-  },
-  changePassword: async (currentPassword, newPassword) => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const currentUser = get().user;
-      if (!currentUser?.email) {
-        throw new Error('No authenticated user found');
-      }
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: currentUser.email,
-        password: currentPassword,
-      });
-
-      if (signInError) throw signInError;
-
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) throw error;
-    } finally {
-      loadingStore.getState().setLoading(false);
-    }
-  },
-  resetPassword: async (email: string) => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
-      });
-      if (error) throw error;
-    } finally {
-      loadingStore.getState().setLoading(false);
-    }
-  },
-  updatePassword: async (newPassword: string) => {
-    try {
-      loadingStore.getState().setLoading(true);
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      if (error) throw error;
-    } finally {
-      loadingStore.getState().setLoading(false);
-    }
-  },
-}));
-
-// Initialize auth state when the store is created
+// Inicializar auth state quando o store é criado
 useAuthStore.getState().initializeAuth();
 
-// Listen for auth changes
-supabase.auth.onAuthStateChange((_event, session) => {
+// Configurar listener para mudanças no estado de autenticação
+supabase.auth.onAuthStateChange((event, session) => {
   if (session?.user) {
-    // I had to do this because the azure provider was returning an array with the 'email' field, confusing the type inference
-    const cleanedUpProvidersArray = session.user.app_metadata?.providers.filter(
-      (elm: string) => elm !== 'email'
-    );
-
-    console.log('session', session);
-    const provider = cleanedUpProvidersArray[0] as AuthProvider;
+    const emailVerified = !!session.user.email_confirmed_at;
     useAuthStore.setState({
       user: {
+        id: session.user.id,
         email: session.user.email || '',
         name: session.user.user_metadata?.name,
-        provider: provider as AuthProvider,
+        provider: determineProvider(session.user),
+        emailVerified
       },
       accessToken: session.access_token || null,
+      refreshToken: session.refresh_token || null,
       isAuthenticated: true,
       isLoading: false,
+      error: null
     });
+    
+    // Configurar timer para renovar o token antes de expirar
+    if (session.expires_at) {
+      const expiresInMs = (session.expires_at * 1000) - Date.now() - (60 * 1000); // 1 minuto antes
+      if (expiresInMs > 0) {
+        setTimeout(() => {
+          useAuthStore.getState().refreshSession();
+        }, expiresInMs);
+      }
+    }
   } else {
     useAuthStore.setState({
       user: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      error: null
     });
   }
 });

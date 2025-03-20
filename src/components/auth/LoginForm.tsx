@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Mail,
   Lock,
@@ -18,26 +18,56 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const navigate = useNavigate();
-  const { signInWithEmail } = useAuthStore();
+  const { signInWithEmail, error: authError, setError: setAuthError } = useAuthStore();
   const { signIn, loading } = useGitHubSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Limpar erros ao montar o componente
+  useEffect(() => {
+    setAuthError(null);
+  }, [setAuthError]);
+
+  // Monitorar erros de autenticação do store
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
+
+  const validateForm = () => {
+    if (!email) {
+      setError("Por favor, insira seu e-mail.");
+      return false;
+    }
+    if (!password) {
+      setError("Por favor, insira sua senha.");
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setError("");
     setIsLoading(true);
 
     try {
       await signInWithEmail(email, password);
       navigate("/dashboard");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(
-        err.message || "An error occurred during login. Please try again."
-      );
+      // O erro principal já foi capturado pelo effect do authError
+      if (!authError) {
+        setError(
+          err.message || "Ocorreu um erro durante o login. Por favor, tente novamente."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +92,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           icon={Mail}
           required
           disabled={isLoading}
+          autoComplete="email"
         />
 
         <FormInput
@@ -74,6 +105,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           icon={Lock}
           required
           disabled={isLoading}
+          autoComplete="current-password"
         />
       </div>
 
@@ -82,6 +114,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           <input
             id="remember-me"
             type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
             className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
           />
           <label
@@ -121,7 +155,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           icon={Github}
           label="GitHub"
           onClick={signIn}
-          disabled={loading}
+          disabled={loading || isLoading}
         />
         {/* <SocialButton icon={Linkedin} label="LinkedIn" /> */}
       </div>

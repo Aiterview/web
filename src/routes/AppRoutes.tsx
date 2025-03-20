@@ -16,6 +16,7 @@ import PlanAndBillingPage from '../components/dashboard/PlanAndBillingPage';
 import HelpAndSupportPage from '../components/dashboard/HelpAndSupportPage';
 import UpdatePasswordForm from '../components/auth/components/UpdatePasswordForm';
 import { PasswordRecoveryRoute } from './PasswordRecoveryRoute';
+import AuthCallback from '../components/auth/AuthCallback';
 
 const AppRoutes = () => {
   const { isAuthenticated } = useAuthStore();
@@ -32,6 +33,9 @@ const AppRoutes = () => {
           }
         />
       </Route>
+
+      {/* Auth Callback Route */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
 
       <Route
         path="/update-password"

@@ -14,8 +14,8 @@ export const useGitHubSignIn = (): { signIn: () => Promise<void>; loading: boole
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: window.location.origin,
-          scopes: 'email profile',
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: 'user:email read:user',
           queryParams: {
             access_type: 'offline',
             prompt: 'select_account',

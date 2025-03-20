@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store/authStore";
 import { BrainCog } from "lucide-react";
@@ -9,24 +9,77 @@ const UpdatePasswordForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { updatePassword } = useAuthStore();
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | ''>('');
+  const { updatePassword, error: authError, setError: setAuthError } = useAuthStore();
   const navigate = useNavigate();
 
+  // Limpar erros do store ao montar
+  useEffect(() => {
+    setAuthError(null);
+  }, [setAuthError]);
+
+  // Monitorar erros do store
+  useEffect(() => {
+    if (authError) {
+      setErrorMessage(authError);
+    }
+  }, [authError]);
+
+  // Validar força da senha
+  const checkPasswordStrength = (password: string) => {
+    if (password.length === 0) {
+      setPasswordStrength('');
+      return;
+    }
+    
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    const strength = 
+      (hasLowerCase ? 1 : 0) + 
+      (hasUpperCase ? 1 : 0) + 
+      (hasNumber ? 1 : 0) + 
+      (hasSpecial ? 1 : 0) + 
+      (password.length >= 8 ? 1 : 0);
+    
+    if (strength < 3) {
+      setPasswordStrength('weak');
+    } else if (strength < 5) {
+      setPasswordStrength('medium');
+    } else {
+      setPasswordStrength('strong');
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const password = e.target.value;
+    setNewPassword(password);
+    checkPasswordStrength(password);
+  };
+
   const validatePassword = () => {
+    // Limpar mensagens anteriores
+    setErrorMessage("");
+    
     if (newPassword.length < 8) {
-      return "Password must be at least 8 characters long.";
+      return "A senha deve ter pelo menos 8 caracteres.";
     }
     if (!/[A-Z]/.test(newPassword)) {
-      return "Password must contain at least one uppercase letter.";
+      return "A senha deve conter pelo menos uma letra maiúscula.";
     }
     if (!/[a-z]/.test(newPassword)) {
-      return "Password must contain at least one lowercase letter.";
+      return "A senha deve conter pelo menos uma letra minúscula.";
     }
     if (!/[0-9]/.test(newPassword)) {
-      return "Password must contain at least one number.";
+      return "A senha deve conter pelo menos um número.";
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return "A senha deve conter pelo menos um caractere especial.";
     }
     if (newPassword !== confirmPassword) {
-      return "Passwords do not match.";
+      return "As senhas não coincidem.";
     }
     return "";
   };
@@ -47,11 +100,15 @@ const UpdatePasswordForm = () => {
     try {
       await updatePassword(newPassword);
       setSuccessMessage(
-        "Password updated successfully! Redirecting to login..."
+        "Senha atualizada com sucesso! Redirecionando para login..."
       );
-      setTimeout(() => navigate("/login"), 3000);
-    } catch {
-      setErrorMessage("Failed to update password. Please try again.");
+      // Redirecionar para a página de autenticação após 3 segundos
+      setTimeout(() => navigate("/auth"), 3000);
+    } catch (err) {
+      // O erro principal já deve ter sido capturado pelo effect do authError
+      if (!authError) {
+        setErrorMessage("Falha ao atualizar a senha. Por favor, tente novamente.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -73,9 +130,9 @@ const UpdatePasswordForm = () => {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Update your password
+              Atualizar sua senha
             </h2>
-            <p className="text-gray-600">Type your new password</p>
+            <p className="text-gray-600">Digite sua nova senha</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,17 +152,60 @@ const UpdatePasswordForm = () => {
                 htmlFor="new-password"
                 className="block text-sm font-medium text-gray-700"
               >
-                New Password
+                Nova Senha
               </label>
               <input
                 id="new-password"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                onChange={handlePasswordChange}
+                placeholder="Digite sua nova senha"
                 className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 required
+                disabled={isLoading}
+                autoComplete="new-password"
               />
+              
+              {passwordStrength && (
+                <div className="mt-2 flex items-center">
+                  <div className="flex w-full space-x-1">
+                    <div 
+                      className={`h-1 flex-1 rounded-full ${
+                        passwordStrength === 'weak' 
+                          ? 'bg-red-500' 
+                          : passwordStrength === 'medium' 
+                          ? 'bg-yellow-500' 
+                          : 'bg-green-500'
+                      }`}
+                    />
+                    <div 
+                      className={`h-1 flex-1 rounded-full ${
+                        passwordStrength === 'weak' 
+                          ? 'bg-gray-200' 
+                          : passwordStrength === 'medium' 
+                          ? 'bg-yellow-500' 
+                          : 'bg-green-500'
+                      }`}
+                    />
+                    <div 
+                      className={`h-1 flex-1 rounded-full ${
+                        passwordStrength === 'strong' ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
+                    />
+                  </div>
+                  <span className="ml-2 text-xs text-gray-500">
+                    {passwordStrength === 'weak'
+                      ? 'Fraca'
+                      : passwordStrength === 'medium'
+                      ? 'Média'
+                      : 'Forte'}
+                  </span>
+                </div>
+              )}
+              
+              <p className="mt-1 text-xs text-gray-500">
+                A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.
+              </p>
             </div>
 
             <div>
@@ -113,16 +213,18 @@ const UpdatePasswordForm = () => {
                 htmlFor="confirm-password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Confirm Password
+                Confirmar Senha
               </label>
               <input
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter new password"
+                placeholder="Digite novamente sua senha"
                 className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 required
+                disabled={isLoading}
+                autoComplete="new-password"
               />
             </div>
 
@@ -133,8 +235,15 @@ const UpdatePasswordForm = () => {
           hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
           ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
             >
-              {isLoading ? "Updating..." : "Update Password"}
+              {isLoading ? "Atualizando..." : "Atualizar Senha"}
             </button>
+            
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Lembrou sua senha?{" "}
+              <Link to="/auth" className="text-indigo-600 hover:text-indigo-500 font-medium">
+                Faça login
+              </Link>
+            </p>
           </form>
         </div>
 
@@ -143,10 +252,10 @@ const UpdatePasswordForm = () => {
           <div className="flex items-center justify-center space-x-4">
             <div className="text-center">
               <h3 className="font-semibold text-lg">
-                Start Your Interview Practice Journey
+                Inicie sua jornada de prática de entrevistas
               </h3>
               <p className="text-white/80">
-                Join over 10,000+ users who improved their skills
+                Junte-se a mais de 10.000 usuários que melhoraram suas habilidades
               </p>
             </div>
           </div>

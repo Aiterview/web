@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   //User,
   Mail,
@@ -18,26 +18,76 @@ const RegisterForm = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | ''>('');
 
-  const { signUpWithEmail } = useAuthStore();
+  const { signUpWithEmail, error: authError } = useAuthStore();
   const { signIn, loading } = useGitHubSignIn();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+
+  // Monitorar erros de autenticação
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
+
+  // Validar força da senha
+  const checkPasswordStrength = (password: string) => {
+    if (password.length === 0) {
+      setPasswordStrength('');
+      return;
+    }
+    
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    const strength = 
+      (hasLowerCase ? 1 : 0) + 
+      (hasUpperCase ? 1 : 0) + 
+      (hasNumber ? 1 : 0) + 
+      (hasSpecial ? 1 : 0) + 
+      (password.length >= 8 ? 1 : 0);
+    
+    if (strength < 3) {
+      setPasswordStrength('weak');
+    } else if (strength < 5) {
+      setPasswordStrength('medium');
+    } else {
+      setPasswordStrength('strong');
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    checkPasswordStrength(newPassword);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação básica
+    if (password.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
     setError("");
     setIsLoading(true);
 
     try {
       await signUpWithEmail(email, password);
-
-      navigate("/dashboard")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      navigate("/dashboard");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          "An error occurred during login. Please try again."
-      );
+      // O erro principal já foi capturado pelo effect do authError
+      if (!authError) {
+        setError(
+          err.message || 
+          "Ocorreu um erro durante o registro. Por favor, tente novamente."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +110,8 @@ const RegisterForm = () => {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           icon={Mail}
+          required
+          disabled={isLoading}
         />
 
         <div>
@@ -68,12 +120,50 @@ const RegisterForm = () => {
             type="password"
             label="Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             placeholder="••••••••"
             icon={Lock}
+            required
+            disabled={isLoading}
           />
+          {passwordStrength && (
+            <div className="mt-1 flex items-center">
+              <div className="flex w-full space-x-1">
+                <div 
+                  className={`h-1 flex-1 rounded-full ${
+                    passwordStrength === 'weak' 
+                      ? 'bg-red-500' 
+                      : passwordStrength === 'medium' 
+                      ? 'bg-yellow-500' 
+                      : 'bg-green-500'
+                  }`}
+                />
+                <div 
+                  className={`h-1 flex-1 rounded-full ${
+                    passwordStrength === 'weak' 
+                      ? 'bg-gray-200' 
+                      : passwordStrength === 'medium' 
+                      ? 'bg-yellow-500' 
+                      : 'bg-green-500'
+                  }`}
+                />
+                <div 
+                  className={`h-1 flex-1 rounded-full ${
+                    passwordStrength === 'strong' ? 'bg-green-500' : 'bg-gray-200'
+                  }`}
+                />
+              </div>
+              <span className="ml-2 text-xs text-gray-500">
+                {passwordStrength === 'weak'
+                  ? 'Fraca'
+                  : passwordStrength === 'medium'
+                  ? 'Média'
+                  : 'Forte'}
+              </span>
+            </div>
+          )}
           <p className="mt-1 text-sm text-gray-500">
-            Must be at least 8 characters long
+            Deve ter pelo menos 8 caracteres
           </p>
         </div>
       </div>
@@ -99,10 +189,12 @@ const RegisterForm = () => {
 
       <button
         type="submit"
-        className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 px-4 rounded-lg
+        disabled={isLoading}
+        className={`w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-2.5 px-4 rounded-lg
                  hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg hover:shadow-xl
                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                 transform hover:scale-[1.02] active:scale-[0.98]"
+                 transform hover:scale-[1.02] active:scale-[0.98]
+                 ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
       >
         {isLoading ? "Creating Account..." : "Create Account"}
       </button>
@@ -116,7 +208,7 @@ const RegisterForm = () => {
           icon={Github}
           label="GitHub"
           onClick={signIn}
-          disabled={loading}
+          disabled={loading || isLoading}
         />
         {/* <SocialButton icon={Linkedin} label="LinkedIn" /> */}
       </div>
