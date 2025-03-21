@@ -90,7 +90,7 @@ const CreditTransaction: React.FC<ICreditTransactionProps> = ({
   transactionId,
 }) => {
   // Verificação de segurança para os dados
-  const safeDate = date || new Date().toLocaleDateString();
+  const safeDate = date || "Data indisponível";
   const safeAmount = typeof amount === 'number' ? amount : 0;
   const safeStatus = status || (safeAmount > 0 ? "Concluído" : "Utilizado");
   const safeDescription = description || "Transação de crédito";
@@ -167,6 +167,35 @@ const StatCard: React.FC<IStatCardProps> = ({
     </div>
   );
 };
+
+// Skeleton loaders
+const PackageSkeleton = () => (
+  <div className="p-4 border-2 rounded-lg shadow bg-white flex flex-col animate-pulse h-full">
+    <div className="w-12 h-12 bg-gray-200 rounded-full self-center mb-3"></div>
+    <div className="h-5 bg-gray-200 rounded w-3/4 self-center mb-2"></div>
+    <div className="h-7 bg-gray-200 rounded w-1/2 self-center mb-2"></div>
+    <div className="h-4 bg-gray-200 rounded w-3/4 self-center mb-5"></div>
+    <div className="mt-auto w-full h-10 bg-gray-200 rounded-lg"></div>
+  </div>
+);
+
+const TransactionSkeleton = () => (
+  <div className="border rounded-lg bg-white animate-pulse">
+    <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+      <div className="flex items-start gap-3 w-full">
+        <div className="p-2 rounded-lg bg-gray-200 h-9 w-9"></div>
+        <div className="flex-1">
+          <div className="h-5 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+      <div className="flex flex-row sm:flex-col md:flex-row items-center justify-between sm:justify-end gap-3 md:gap-4 w-full sm:w-auto">
+        <div className="h-6 bg-gray-200 rounded w-24"></div>
+        <div className="h-6 bg-gray-200 rounded w-20"></div>
+      </div>
+    </div>
+  </div>
+);
 
 // Componente principal
 const CreditsPage = () => {
@@ -245,20 +274,38 @@ const CreditsPage = () => {
       }
       
       // Mapear transações para o formato necessário
-      const formattedTransactions = response.map((tx: CreditTransaction) => ({
-        date: new Date(tx.created_at).toLocaleDateString(),
-        amount: tx.amount,
-        status: tx.amount > 0 ? "Concluído" : "Utilizado",
-        description: tx.description || 
-          (tx.type === 'purchase' ? `Compra de ${tx.package_size} créditos` : 
-           tx.type === 'usage' ? 'Utilização de serviço' : 
-           tx.type === 'monthly_free' ? 'Créditos mensais gratuitos' : 
-           tx.type === 'initial_free' ? 'Créditos iniciais gratuitos' : 
-           'Transação de créditos'),
-        transactionId: tx.id
-      }));
+      const formattedTransactions = response.map((tx: CreditTransaction) => {
+        // Garantir formato de data válido
+        let formattedDate = "Data indisponível";
+        try {
+          // Verificar se a data é válida antes de formatá-la
+          const date = new Date(tx.created_at);
+          if (!isNaN(date.getTime())) {
+            formattedDate = new Intl.DateTimeFormat('pt-BR', { 
+              day: '2-digit', 
+              month: '2-digit',
+              year: 'numeric'
+            }).format(date);
+          }
+        } catch (e) {
+          console.error('Erro ao formatar data:', e);
+        }
+        
+        return {
+          date: formattedDate,
+          amount: tx.amount,
+          status: tx.amount > 0 ? "Concluído" : "Utilizado",
+          description: tx.description || 
+            (tx.type === 'purchase' ? `Compra de ${tx.package_size} créditos` : 
+             tx.type === 'usage' ? 'Utilização de serviço' : 
+             tx.type === 'monthly_free' ? 'Créditos mensais gratuitos' : 
+             tx.type === 'initial_free' ? 'Créditos iniciais gratuitos' : 
+             'Transação de créditos'),
+          transactionId: tx.id
+        };
+      });
       
-      // Ordenar por data mais recente primeiro (já está ordenado pela API, mas garantimos aqui também)
+      // Ordenar por data mais recente primeiro
       const sortedTransactions = formattedTransactions.sort((a, b) => {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       });
@@ -282,24 +329,8 @@ const CreditsPage = () => {
         return;
       }
       
-      // Garantir que sempre teremos 4 pacotes
-      const ensureFourPackages = (pkgs: ICreditPackage[]): ICreditPackage[] => {
-        if (!pkgs || pkgs.length === 0) return defaultPackages;
-        
-        if (pkgs.length < 4) {
-          const missingPackages = defaultPackages.filter(
-            defaultPkg => !pkgs.some((p: ICreditPackage) => p.size === defaultPkg.size)
-          ).slice(0, 4 - pkgs.length);
-          
-          return [...pkgs, ...missingPackages];
-        }
-        
-        if (pkgs.length > 4) return pkgs.slice(0, 4);
-        
-        return pkgs;
-      };
-      
-      setPackages(ensureFourPackages(packagesResponse.prices));
+      // Garantir que sempre teremos pacotes
+      setPackages(packagesResponse.prices.length > 0 ? packagesResponse.prices : defaultPackages);
     } catch (error) {
       console.error('Erro ao buscar pacotes disponíveis:', error);
       setPackages(defaultPackages);
@@ -338,36 +369,6 @@ const CreditsPage = () => {
     }
   };
 
-  // Renderizar SkeletonCard para carregamento dos pacotes
-  const PackageSkeleton = () => (
-    <div className="p-4 border-2 rounded-lg shadow bg-white flex flex-col animate-pulse h-full">
-      <div className="w-12 h-12 bg-gray-200 rounded-full self-center mb-3"></div>
-      <div className="h-5 bg-gray-200 rounded w-3/4 self-center mb-2"></div>
-      <div className="h-7 bg-gray-200 rounded w-1/2 self-center mb-2"></div>
-      <div className="h-4 bg-gray-200 rounded w-3/4 self-center mb-5"></div>
-      <div className="mt-auto w-full h-10 bg-gray-200 rounded-lg"></div>
-    </div>
-  );
-
-  // Renderizar TransactionSkeleton para carregamento das transações
-  const TransactionSkeleton = () => (
-    <div className="border rounded-lg bg-white animate-pulse">
-      <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-        <div className="flex items-start gap-3 w-full">
-          <div className="p-2 rounded-lg bg-gray-200 h-9 w-9"></div>
-          <div className="flex-1">
-            <div className="h-5 bg-gray-200 rounded w-1/4 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          </div>
-        </div>
-        <div className="flex flex-row sm:flex-col md:flex-row items-center justify-between sm:justify-end gap-3 md:gap-4 w-full sm:w-auto">
-          <div className="h-6 bg-gray-200 rounded w-24"></div>
-          <div className="h-6 bg-gray-200 rounded w-20"></div>
-        </div>
-      </div>
-    </div>
-  );
-
   // Renderização condicional para Loading State
   if (loading && !balanceLoaded && !packagesLoaded && !transactionsLoaded && !refreshing) {
     return (
@@ -377,55 +378,41 @@ const CreditsPage = () => {
     );
   }
 
-  // Garantir que transações seja sempre um array mesmo em caso de erro
-  const safeTransactions = Array.isArray(transactions) ? transactions : [];
-
-  // Dados de exemplo para caso de falha total
-  const fallbackTransactions: ICreditTransactionProps[] = [
-    {
-      date: new Date().toLocaleDateString(),
-      amount: 10,
-      status: "Concluído",
-      description: "Créditos iniciais",
-      transactionId: "fallback-1"
-    },
-    {
-      date: new Date().toLocaleDateString(),
-      amount: -1,
-      status: "Utilizado",
-      description: "Utilização do serviço",
-      transactionId: "fallback-2"
-    }
-  ];
+  // Formatar a data da última recarga
+  let lastRechargeDate = "Nenhuma";
+  const lastRecharge = transactions.find(t => t.amount > 0);
+  if (lastRecharge && lastRecharge.date && lastRecharge.date !== "Data indisponível") {
+    lastRechargeDate = lastRecharge.date;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8 bg-gray-50">
       <div className="w-full max-w-4xl bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Header */}
         <div className="px-4 sm:px-8 py-6 sm:py-8 bg-primary-50 border-b border-gray-200">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">
             Créditos
           </h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base">
+          <p className="text-gray-600 mt-2 text-sm sm:text-base text-center sm:text-left">
             Gerencie seus créditos e realize recargas
           </p>
         </div>
 
         {/* Saldo */}
         <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200 bg-white">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+            <div className="flex items-center sm:items-start gap-4">
               <div className="p-3 rounded-full bg-primary-50">
                 <Wallet className="h-8 w-8 text-primary-600" />
               </div>
-              <div>
+              <div className="text-center sm:text-left">
                 {balanceLoaded ? (
                   <>
                     <h2 className="font-semibold text-gray-900">
                       Saldo Atual: <span className="text-primary-600">{creditBalance} créditos</span>
                     </h2>
-                    <p className="text-gray-600 flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4" /> Atualizado em {new Date().toLocaleDateString()}
+                    <p className="text-gray-600 flex items-center justify-center sm:justify-start gap-2 text-sm">
+                      <Clock className="h-4 w-4" /> Atualizado em {new Date().toLocaleDateString('pt-BR')}
                     </p>
                   </>
                 ) : (
@@ -440,7 +427,7 @@ const CreditsPage = () => {
               <button 
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className={`inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 text-sm ${refreshing ? 'opacity-50 cursor-not-allowed' : ''} w-full sm:w-auto justify-center`}
+                className={`inline-flex items-center justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 text-sm ${refreshing ? 'opacity-50 cursor-not-allowed' : ''} w-full sm:w-auto`}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                 {refreshing ? 'Atualizando...' : 'Atualizar'}
@@ -452,7 +439,7 @@ const CreditsPage = () => {
         {/* Pacotes de Créditos */}
         <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200">
           <div className="mb-4 sm:mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900 text-center sm:text-left">
               Pacotes de Créditos
             </h2>
           </div>
@@ -504,7 +491,7 @@ const CreditsPage = () => {
 
         {/* Histórico de Transações */}
         <div className="px-4 sm:px-8 py-4 sm:py-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 text-center sm:text-left">
             Histórico de Transações
           </h2>
           <div className="space-y-3 sm:space-y-4">
@@ -545,9 +532,7 @@ const CreditsPage = () => {
           <StatCard
             icon={Clock}
             title="Última Recarga"
-            value={transactions && transactions.length > 0 ? 
-              transactions.filter(t => t.amount > 0)[0]?.date || "Nenhuma" : 
-              "Nenhuma"}
+            value={lastRechargeDate}
             type="info"
           />
           <StatCard
