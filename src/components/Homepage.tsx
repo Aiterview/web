@@ -1,7 +1,7 @@
 import HeroSection from './sections/HeroSection';
 import FeaturesSection from './sections/FeaturesSection';
 import HowItWorks from './sections/HowItWorks';
-import PricingSection from './sections/PricingSection';
+// import PricingSection from './sections/PricingSection';
 import Testimonials from './sections/Testimonials';
 import Footer from './sections/Footer';
 
@@ -11,7 +11,7 @@ const Homepage = () => {
       <HeroSection />
       <FeaturesSection />
       <HowItWorks />
-      <PricingSection />
+      {/* <PricingSection /> */}
       <Testimonials />
       <Footer />
     </div>

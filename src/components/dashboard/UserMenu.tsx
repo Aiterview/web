@@ -16,7 +16,7 @@ const UserMenu = () => {
   const menuItems = [
     { icon: User, label: 'Profile', path: '/dashboard/profile' },
     { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
-    { icon: CreditCard, label: 'Plan & Billing', path: '/dashboard/billing' },
+    { icon: CreditCard, label: 'Créditos', path: '/dashboard/billing' },
     { icon: HelpCircle, label: 'Help & Support', path: '/dashboard/support' },
   ];
 

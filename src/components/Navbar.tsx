@@ -27,7 +27,7 @@ const Navbar = () => {
             <NavLink href="#features">Features</NavLink>
             <NavLink href="#how-it-works">How It Works</NavLink>
             <NavLink href="#testimonials">Testimonials</NavLink>
-            <NavLink href="#pricing">Pricing</NavLink>
+            {/* {<NavLink href="#pricing">Pricing</NavLink>} */}
             {isAuthenticated ? (
               <Link 
                 to="/dashboard"

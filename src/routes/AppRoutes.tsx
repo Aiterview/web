@@ -12,7 +12,7 @@ import ProfilePage from '../components/dashboard/ProfilePage';
 import SettingsPage from '../components/dashboard/SettingsPage';
 import StartPracticePage from '../components/dashboard/StartPracticePage';
 import { useAuthStore } from '../store/authStore';
-import PlanAndBillingPage from '../components/dashboard/PlanAndBillingPage';
+import CreditsPage from '../components/dashboard/CreditsPage';
 import HelpAndSupportPage from '../components/dashboard/HelpAndSupportPage';
 import UpdatePasswordForm from '../components/auth/components/UpdatePasswordForm';
 import AuthCallback from '../components/auth/AuthCallback';
@@ -58,7 +58,7 @@ const AppRoutes = () => {
         <Route index element={<StartPracticePage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="billing" element={<PlanAndBillingPage/>}/>
+        <Route path="billing" element={<CreditsPage/>}/>
         <Route path="support" element={<HelpAndSupportPage/>}/>
 
         {/* <Route path="sessions" element={<SessionsPage />} />

@@ -1,5 +1,13 @@
 import axios, { AxiosRequestConfig, AxiosError } from 'axios';
 import { useAuthStore } from '../../store/authStore';
+import { 
+  CreditBalance, 
+  CreditTransaction, 
+  TransactionsResponse, 
+  ICreditPackage, 
+  PackagesResponse, 
+  CheckoutResponse 
+} from '../../types/credits';
 
 // Usage statistics interface
 export interface UsageStats {
@@ -121,6 +129,76 @@ export const apiService = {
           status: axiosError.response?.status || 500,
           error: axiosError.message,
         };
+      }
+    }
+  },
+  
+  // Módulo de Créditos
+  credits: {
+    /**
+     * Busca o saldo de créditos do usuário
+     */
+    getBalance: async (userId: string): Promise<CreditBalance> => {
+      try {
+        const response = await api.get(`/api/credits/balance/${userId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Erro ao buscar saldo de créditos:', error);
+        // Retorna um objeto padrão com saldo zero
+        return { balance: 0, userId };
+      }
+    },
+
+    /**
+     * Busca o histórico de transações do usuário
+     */
+    getTransactions: async (userId: string, limit: number = 10, page: number = 1): Promise<TransactionsResponse> => {
+      try {
+        const response = await api.get(`/api/credits/transactions/${userId}`, {
+          params: { limit, page }
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Erro ao buscar histórico de transações:', error);
+        // Retorna um objeto padrão com array vazio de transações
+        return { data: [], total: 0, page, limit };
+      }
+    },
+
+    /**
+     * Busca os pacotes disponíveis para compra
+     */
+    getPackages: async (): Promise<PackagesResponse> => {
+      try {
+        const response = await api.get('/api/credits/packages');
+        return response.data;
+      } catch (error) {
+        console.error('Erro ao buscar pacotes disponíveis:', error);
+        // Retorna pacotes padrão em caso de falha
+        const defaultPackages = [
+          { size: 1, unitPrice: 1.00 },
+          { size: 5, unitPrice: 4.50},
+          { size: 10, unitPrice: 8.00 },
+          { size: 20, unitPrice: 14.00 }
+        ];
+        return { availablePackages: [1, 5, 10, 20], prices: defaultPackages };
+      }
+    },
+
+    /**
+     * Cria uma sessão de checkout para compra de créditos
+     */
+    createCheckoutSession: async (userId: string, customerEmail: string, packageSize: number): Promise<CheckoutResponse> => {
+      try {
+        const response = await api.post('/api/credits/checkout-session', {
+          userId,
+          customerEmail,
+          packageSize
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Erro ao criar sessão de checkout:', error);
+        throw error; // Rejeita a promessa para que o componente possa lidar com o erro
       }
     }
   },

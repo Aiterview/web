@@ -21,7 +21,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen }) => {
     //{ icon: Calendar, label: 'Practice Sessions', path: '/dashboard/sessions' },
     //{ icon: Clock, label: 'History', path: '/dashboard/history' },
     //{ icon: Star, label: 'Saved Questions', path: '/dashboard/saved' },
-    { icon: CreditCard, label: 'Plan & Billing', path: '/dashboard/billing' },
+    { icon: CreditCard, label: 'Créditos', path: '/dashboard/billing' },
     { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
     { icon: HelpCircle, label: 'Help & Support', path: '/dashboard/support' },
   ];
