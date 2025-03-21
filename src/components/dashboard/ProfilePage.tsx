@@ -1,9 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Camera, Mail, Phone, MapPin, Briefcase, Calendar } from 'lucide-react';
-import { user } from '../../lib/supabase/supaseUser';
+import { getUserProfile } from '../../lib/supabase/supaseUser';
 
 const ProfilePage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userData, setUserData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    location: '',
+    profession: '',
+    company: '',
+    created_at: Date.now(),
+    avatar_url: ''
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const userResponse = await getUserProfile();
+        
+        if (userResponse && userResponse.data) {
+          setUserData(userResponse.data);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados do usuário:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleEdit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault();
@@ -11,14 +41,18 @@ const ProfilePage = () => {
     if(!showEditModal) {
       setShowEditModal(true);
     }
-
-    console.log(showEditModal)
   }
-
-  const userData = user.data;
 
   const month = new Date(userData.created_at).toLocaleString('en-US', { month: 'long' });
   const year = new Date(userData.created_at).getFullYear();
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto flex justify-center items-center p-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -78,7 +112,7 @@ const ProfilePage = () => {
           <div className="flex justify-between items-end -mt-12">
             <div className="relative">
               <img
-                src={userData.avatar_url}
+                src={userData.avatar_url || 'https://via.placeholder.com/128'}
                 alt="Profile"
                 className="w-32 h-32 rounded-xl border-4 border-white"
               />

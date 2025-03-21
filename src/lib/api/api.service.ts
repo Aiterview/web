@@ -152,16 +152,29 @@ export const apiService = {
     /**
      * Busca o histórico de transações do usuário
      */
-    getTransactions: async (userId: string, limit: number = 10, page: number = 1): Promise<TransactionsResponse> => {
+    getTransactions: async (userId: string, limit: number = 10, page: number = 1): Promise<CreditTransaction[]> => {
       try {
+        console.log(`Buscando transações para: /api/credits/transactions/${userId} com params: limit=${limit}, page=${page}`);
         const response = await api.get(`/api/credits/transactions/${userId}`, {
           params: { limit, page }
         });
-        return response.data;
+        
+        // Se a resposta for um array, retornar diretamente
+        if (Array.isArray(response.data)) {
+          return response.data;
+        }
+        
+        // Se a resposta for um objeto com um campo 'data', retornar esse campo
+        if (response.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        
+        // Caso nenhum dos formatos seja encontrado, retornar um array vazio
+        console.error('Formato de resposta não reconhecido:', response.data);
+        return [];
       } catch (error) {
         console.error('Erro ao buscar histórico de transações:', error);
-        // Retorna um objeto padrão com array vazio de transações
-        return { data: [], total: 0, page, limit };
+        return [];
       }
     },
 
