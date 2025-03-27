@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, RefreshCw, Award, RotateCw } from 'lucide-react';
 import apiService from '../../../lib/api/api.service';
+import GenerateConfirmModal from '../../shared/GenerateConfirmModal';
+import { useUsageStore } from '../../../store/usageStore';
 
 interface FeedbackStepProps {
   questions: string[];
   answers: Record<string, string>;
   onRetake: () => void;
+  jobType: string;
+  requirements: string;
 }
 
 interface FeedbackData {
@@ -15,10 +19,12 @@ interface FeedbackData {
   score: number;
 }
 
-const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetake }) => {
+const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetake, jobType, requirements }) => {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const { usage, hasLimitReached } = useUsageStore();
 
   useEffect(() => {
     // Get feedback from API based on answers
@@ -277,6 +283,11 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
     return 'Needs Improvement';
   };
 
+  // Manipulador de clique para nova prática com o mesmo cargo/requisitos
+  const handleGenerateNewClick = () => {
+    setIsConfirmModalOpen(true);
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
@@ -286,6 +297,23 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         </div>
         <h2 className="text-3xl font-bold text-gray-800 mb-4">Interview Feedback</h2>
         <p className="text-gray-600">Here's how you performed in your practice interview</p>
+        
+        {/* Usage limit information */}
+        {usage && (
+          <div className="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
+            {usage.isPremium ? (
+              <p className="text-sm flex items-center">
+                <span className="font-medium mr-1">Premium Account:</span> Unlimited question generations
+              </p>
+            ) : (
+              <p className="text-sm flex items-center">
+                <span className="font-medium mr-1">Usage:</span> 
+                {usage.current} of {usage.limit} generations used this month 
+                ({usage.remaining} remaining)
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -338,17 +366,38 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         </>
       ) : null}
 
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-4">
         <button
           onClick={onRetake}
+          className="flex items-center space-x-2 px-6 py-3 rounded-lg border-2 border-indigo-500
+                  text-indigo-600 hover:bg-indigo-50 transition-colors"
+        >
+          <RefreshCw className="h-5 w-5" />
+          <span>New Interview Topic</span>
+        </button>
+        
+        <button
+          onClick={handleGenerateNewClick}
           className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-8 py-3 rounded-lg
                    hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
                    hover:scale-105 active:scale-95"
+          disabled={hasLimitReached}
+          title={hasLimitReached ? "Monthly question generation limit reached" : ""}
         >
-          <RefreshCw className="h-5 w-5" />
-          <span>Retake Interview</span>
+          <RotateCw className="h-5 w-5" />
+          <span>New Questions (Same Topic)</span>
         </button>
       </div>
+      
+      {/* Confirm Generation Modal */}
+      <GenerateConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={() => {
+          setIsConfirmModalOpen(false);
+          onRetake();
+        }}
+      />
     </div>
   );
 };
