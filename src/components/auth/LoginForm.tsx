@@ -26,12 +26,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Limpar erros ao montar o componente
+  // Clear errors when the component mounts
   useEffect(() => {
     setAuthError(null);
   }, [setAuthError]);
 
-  // Monitorar erros de autenticação do store
+  // Monitor authentication errors from the store
   useEffect(() => {
     if (authError) {
       setError(authError);
@@ -40,11 +40,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
 
   const validateForm = () => {
     if (!email) {
-      setError("Por favor, insira seu e-mail.");
+      setError("Please enter your email.");
       return false;
     }
     if (!password) {
-      setError("Por favor, insira sua senha.");
+      setError("Please enter your password.");
       return false;
     }
     return true;
@@ -62,10 +62,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
       await signInWithEmail(email, password);
       navigate("/dashboard");
     } catch (err: any) {
-      // O erro principal já foi capturado pelo effect do authError
+      // The main error has already been captured by the authError effect
       if (!authError) {
         setError(
-          err.message || "Ocorreu um erro durante o login. Por favor, tente novamente."
+          err.message || "An error occurred during login. Please try again."
         );
       }
     } finally {

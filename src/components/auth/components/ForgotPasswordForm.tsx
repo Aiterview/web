@@ -12,12 +12,12 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
   const [message, setMessage] = useState("");
   const { resetPassword, error: authError, setError: setAuthError } = useAuthStore();
 
-  // Limpar erros do store ao montar
+  // Clean errors from the store when mounting
   useEffect(() => {
     setAuthError(null);
   }, [setAuthError]);
 
-  // Monitorar erros do store
+  // Monitor errors from the store
   useEffect(() => {
     if (authError) {
       setMessage(authError);
@@ -33,12 +33,12 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
     e.preventDefault();
     
     if (!email.trim()) {
-      setMessage("Por favor, insira seu endereço de e-mail.");
+      setMessage("Please enter your email address.");
       return;
     }
     
     if (!validateEmail(email)) {
-      setMessage("Por favor, insira um endereço de e-mail válido.");
+      setMessage("Please enter a valid email address.");
       return;
     }
 
@@ -47,11 +47,11 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
 
     try {
       await resetPassword(email);
-      setMessage("Link de redefinição de senha enviado! Por favor, verifique seu e-mail.");
+      setMessage("Password reset link sent! Please check your email.");
     } catch (err) {
-      // O erro principal já deve ter sido capturado pelo effect do authError
+      // The error should already have been captured by the authError effect
       if (!authError) {
-        setMessage("Falha ao enviar o e-mail de redefinição. Tente novamente.");
+        setMessage("Failed to send password reset email. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -63,7 +63,7 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
       {message && (
         <div
           className={`border-l-4 p-4 ${
-            message.includes("enviado") 
+            message.includes("sent") 
               ? "bg-blue-50 border-blue-500 text-blue-700" 
               : "bg-red-50 border-red-500 text-red-700"
           }`}
@@ -78,7 +78,7 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
         </span>
         <input
           type="email"
-          placeholder="seu@email.com"
+          placeholder="your@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -97,7 +97,7 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
           transform hover:scale-[1.02] active:scale-[0.98]
           ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
       >
-        {isLoading ? "Enviando..." : "Enviar Link de Redefinição"}
+        {isLoading ? "Sending..." : "Send Password Reset Link"}
       </button>
 
       <button
@@ -105,7 +105,7 @@ const ForgotPasswordForm = ({ onBackToLogin }: ForgotPasswordFormProps) => {
         onClick={onBackToLogin}
         className="w-full mt-4 text-sm text-indigo-600 hover:text-indigo-500 font-medium"
       >
-        Voltar para Login
+        Back to Login
       </button>
     </form>
   );

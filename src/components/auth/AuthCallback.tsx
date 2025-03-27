@@ -9,20 +9,20 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Pega o hash e os parâmetros da URL para processamento
+        // Get the hash and parameters from the URL for processing
         const { hash, search } = window.location;
 
-        // Verificar se é um link de recuperação de senha
+        // Check if it's a recovery link
         if (hash && hash.includes('type=recovery')) {
-          // Redirecionar para a página de atualização de senha
+          // Redirect to the password update page
           navigate('/update-password', { replace: true });
           return;
         }
 
-        // Se acessou diretamente a página sem parâmetros, verificamos a sessão atual
-        // em vez de lançar um erro
+        // If accessed directly without parameters, check the current session
+        // instead of throwing an error
         if (!hash && !search) {
-          // Verificar se é uma sessão de recuperação de senha
+          // Check if it's a recovery session
           const { data, error } = await supabase.auth.getSession();
           
           if (error) {
@@ -30,22 +30,22 @@ const AuthCallback = () => {
           }
           
           if (data.session) {
-            // Verificar se é uma sessão de recuperação de senha
+            // Check if it's a recovery session
             if (data.session.user?.aud === 'recovery') {
               navigate('/update-password', { replace: true });
               return;
             }
             
-            // Se já está autenticado, redireciona para o dashboard
+            // If already authenticated, redirect to the dashboard
             navigate('/dashboard', { replace: true });
           } else {
-            // Se não está autenticado, redireciona para a página de login
+            // If not authenticated, redirect to the login page
             navigate('/auth', { replace: true });
           }
           return;
         }
 
-        // Processa a resposta da autenticação regular
+        // Process the regular authentication response
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -53,24 +53,24 @@ const AuthCallback = () => {
         }
 
         if (data.session) {
-          // Verificar novamente se esta é uma sessão de recuperação de senha
+          // Check again if this is a recovery session
           if (data.session.user?.aud === 'recovery') {
             navigate('/update-password', { replace: true });
             return;
           }
           
-          // Se temos uma sessão normal, o login foi bem-sucedido
-          // Redirecionar para o dashboard
+          // If we have a normal session, the login was successful
+          // Redirect to the dashboard
           navigate('/dashboard', { replace: true });
         } else {
-          // Se não temos uma sessão, mas também não temos um erro,
-          // algo estranho aconteceu
+          // If we don't have a session, but also don't have an error,
+          // something strange happened
           navigate('/auth', { replace: true });
         }
       } catch (err) {
-        console.error('Erro durante callback de autenticação:', err);
-        setError(err instanceof Error ? err.message : 'Erro durante autenticação');
-        // Redirecionar para a página de login após alguns segundos
+        console.error('Error during authentication callback:', err);
+        setError(err instanceof Error ? err.message : 'Error during authentication');
+        // Redirect to the login page after a few seconds
         setTimeout(() => {
           navigate('/auth', { replace: true });
         }, 3000);
@@ -80,20 +80,20 @@ const AuthCallback = () => {
     handleAuthCallback();
   }, [navigate]);
 
-  // Mostrar uma tela de carregamento enquanto processamos o callback
+  // Show a loading screen while processing the callback
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-4">
       {error ? (
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Erro de Autenticação</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Authentication Error</h2>
           <p className="text-gray-700">{error}</p>
-          <p className="mt-4 text-sm text-gray-500">Redirecionando para a página de login...</p>
+          <p className="mt-4 text-sm text-gray-500">Redirecting to the login page...</p>
         </div>
       ) : (
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-t-transparent border-indigo-700 rounded-full animate-spin mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Processando autenticação</h2>
-          <p className="text-gray-600">Por favor, aguarde enquanto verificamos suas credenciais...</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Processing authentication</h2>
+          <p className="text-gray-600">Please wait while we verify your credentials...</p>
         </div>
       )}
     </div>

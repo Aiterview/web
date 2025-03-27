@@ -24,14 +24,14 @@ const RegisterForm = () => {
   const { signIn, loading } = useGitHubSignIn();
   const navigate = useNavigate();
 
-  // Monitorar erros de autenticação
+  // Monitor authentication errors
   useEffect(() => {
     if (authError) {
       setError(authError);
     }
   }, [authError]);
 
-  // Validar força da senha
+  // Validate password strength
   const checkPasswordStrength = (password: string) => {
     if (password.length === 0) {
       setPasswordStrength('');
@@ -68,9 +68,9 @@ const RegisterForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação básica
+    // Basic validation
     if (password.length < 8) {
-      setError("A senha deve ter pelo menos 8 caracteres.");
+      setError("The password must be at least 8 characters long.");
       return;
     }
 
@@ -81,11 +81,11 @@ const RegisterForm = () => {
       await signUpWithEmail(email, password);
       navigate("/dashboard");
     } catch (err: any) {
-      // O erro principal já foi capturado pelo effect do authError
+      // The main error has already been captured by the authError effect
       if (!authError) {
         setError(
           err.message || 
-          "Ocorreu um erro durante o registro. Por favor, tente novamente."
+          "An error occurred during registration. Please try again."
         );
       }
     } finally {
@@ -155,15 +155,15 @@ const RegisterForm = () => {
               </div>
               <span className="ml-2 text-xs text-gray-500">
                 {passwordStrength === 'weak'
-                  ? 'Fraca'
+                  ? 'Weak'
                   : passwordStrength === 'medium'
-                  ? 'Média'
-                  : 'Forte'}
+                  ? 'Medium'
+                  : 'Strong'}
               </span>
             </div>
           )}
           <p className="mt-1 text-sm text-gray-500">
-            Deve ter pelo menos 8 caracteres
+            Must be at least 8 characters
           </p>
         </div>
       </div>

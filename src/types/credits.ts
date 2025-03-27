@@ -1,5 +1,5 @@
 /**
- * Tipos relacionados ao módulo de créditos
+ * Types related to the credits module
  */
 
 export interface CreditBalance {
@@ -38,7 +38,7 @@ export interface CheckoutResponse {
   url: string;
 }
 
-// Interfaces para componentes relacionados a créditos
+// Interfaces for components related to credits
 export interface ICreditTransactionProps {
   date: string;
   amount: number;
@@ -47,7 +47,7 @@ export interface ICreditTransactionProps {
   transactionId: string;
 }
 
-// Temas de cores para pacotes de créditos
+// Color themes for credit packages
 export const packageThemes = {
   1: {
     bgColor: "bg-primary-50",

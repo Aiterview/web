@@ -28,7 +28,7 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-gray-800 mb-4">Product</h3>
             <FooterLinks
-              links={['Features', 'How It Works', 'Pricing']}
+              links={['Features', 'How It Works']}
             />
           </div>
 

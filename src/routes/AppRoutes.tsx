@@ -36,10 +36,10 @@ const AppRoutes = () => {
       {/* Auth Callback Route */}
       <Route path="/auth/callback" element={<AuthCallback />} />
       
-      {/* Formulário de atualização de senha - acessível diretamente para recuperação */}
+      {/* Password update form - accessible directly for recovery */}
       <Route path="/update-password" element={<UpdatePasswordForm />} />
       
-      {/* Rotas para capturar todos os formatos possíveis de URL de recuperação */}
+      {/* Routes to capture all possible URL formats for recovery */}
       <Route path="/*type=recovery" element={<Navigate to="/update-password" replace />} />
       <Route path="/recovery" element={<Navigate to="/update-password" replace />} />
       <Route path="/reset-password" element={<Navigate to="/update-password" replace />} />

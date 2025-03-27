@@ -28,7 +28,7 @@ interface IStatCardProps {
   type: "success" | "warning" | "info";
 }
 
-// Componente de pacote de crédito
+// Credit package component
 const CreditPackageCard: React.FC<{
   packageData: ICreditPackage;
   isLoading: boolean;
@@ -47,7 +47,7 @@ const CreditPackageCard: React.FC<{
       </div>
       
       <h3 className="font-medium text-center text-gray-900 text-lg">
-        {size} {size === 1 ? 'Crédito' : 'Créditos'}
+        {size} {size === 1 ? 'Credit' : 'Credits'}
       </h3>
       
       <p className={`text-center ${theme.textColor} font-bold text-2xl mt-2`}>
@@ -55,13 +55,13 @@ const CreditPackageCard: React.FC<{
       </p>
       
       <p className="text-center text-gray-500 text-sm">
-        (R$ {unitPrice.toFixed(2)} por crédito)
+        (R$ {unitPrice.toFixed(2)} per credit)
       </p>
       
       {size > 5 && (
         <div className="mt-2 mb-2">
           <p className="text-center text-sm bg-yellow-50 text-yellow-700 py-1 px-2 rounded-md">
-            Economize {(((10.00 - unitPrice) / 10.00 * 100).toFixed(0))}% por crédito
+            Save {(((10.00 - unitPrice) / 10.00 * 100).toFixed(0))}% per credit
           </p>
         </div>
       )}
@@ -69,19 +69,19 @@ const CreditPackageCard: React.FC<{
       {isLoading ? (
         <div className={`mt-auto w-full py-2 px-4 ${theme.buttonColor} text-white rounded-lg flex items-center justify-center gap-2`}>
           <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></div>
-          <span>Processando...</span>
+          <span>Processing...</span>
         </div>
       ) : (
         <div className={`mt-auto w-full py-2 px-4 ${theme.buttonColor} text-white rounded-lg flex items-center justify-center gap-2`}>
           <PlusCircle className="h-4 w-4" />
-          <span>Comprar Agora</span>
+          <span>Buy now</span>
         </div>
       )}
     </div>
   );
 };
 
-// Componente de transação
+// Credit transaction component
 const CreditTransaction: React.FC<ICreditTransactionProps> = ({
   date,
   amount,
@@ -89,16 +89,16 @@ const CreditTransaction: React.FC<ICreditTransactionProps> = ({
   description,
   transactionId,
 }) => {
-  // Verificação de segurança para os dados
-  const safeDate = date || "Data indisponível";
+  // Security check for data
+  const safeDate = date || "Data unavailable";
   const safeAmount = typeof amount === 'number' ? amount : 0;
-  const safeStatus = status || (safeAmount > 0 ? "Concluído" : "Utilizado");
-  const safeDescription = description || "Transação de crédito";
+  const safeStatus = status || (safeAmount > 0 ? "Completed" : "Used");
+  const safeDescription = description || "Credit transaction";
   
   return (
     <div className="border rounded-lg bg-white hover:shadow-md transition-shadow">
       <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-        {/* Informações principais */}
+        {/* Main information */}
         <div className="flex items-start gap-3 w-full sm:w-auto">
           <div className="p-2 rounded-lg bg-primary-50 flex-shrink-0 mt-0.5 sm:mt-0">
             <CreditCard className="h-5 w-5 text-primary-500" />
@@ -109,10 +109,10 @@ const CreditTransaction: React.FC<ICreditTransactionProps> = ({
           </div>
         </div>
 
-        {/* Valor, status */}
+        {/* Value, status */}
         <div className="flex flex-row sm:flex-col md:flex-row items-center justify-between sm:justify-end gap-3 md:gap-4 w-full sm:w-auto mt-2 sm:mt-0">
           <span className={`font-medium text-base sm:text-lg ${safeAmount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {safeAmount > 0 ? '+' : ''}{safeAmount} {Math.abs(safeAmount) === 1 ? 'crédito' : 'créditos'}
+            {safeAmount > 0 ? '+' : ''}{safeAmount} {Math.abs(safeAmount) === 1 ? 'credit' : 'credits'}
           </span>
           <span className={`px-3 py-1 rounded-full text-sm text-center whitespace-nowrap
             ${safeAmount > 0 ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -124,7 +124,7 @@ const CreditTransaction: React.FC<ICreditTransactionProps> = ({
   );
 };
 
-// Componente de estatísticas
+// Statistics component
 const StatCard: React.FC<IStatCardProps> = ({
   icon: Icon,
   title,
@@ -207,7 +207,7 @@ const CreditsPage = () => {
   const [checkoutLoading, setCheckoutLoading] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Array de pacotes padrão
+  // Default packages array
   const defaultPackages: ICreditPackage[] = [
     { size: 1, unitPrice: 10.00 },
     { size: 5, unitPrice: 9.00 },
@@ -215,7 +215,7 @@ const CreditsPage = () => {
     { size: 20, unitPrice: 7.00 }
   ];
 
-  // Adicionando skeleton states para melhorar UX durante carregamento
+  // Adding skeleton states to improve UX during loading
   const [packagesLoaded, setPackagesLoaded] = useState(false);
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
   const [balanceLoaded, setBalanceLoaded] = useState(false);
@@ -227,7 +227,7 @@ const CreditsPage = () => {
   const fetchData = async () => {
     setLoading(true);
     
-    // Paralelizar as requisições para melhorar performance
+    // Parallelizing requests to improve performance
     if (user?.id) {
       Promise.allSettled([
         fetchBalance(),
@@ -243,7 +243,7 @@ const CreditsPage = () => {
     }
   };
 
-  // Separar as chamadas para permitir carregamento parcial
+  // Separating calls to allow partial loading
   const fetchBalance = async () => {
     try {
       if (!user?.id) return;
@@ -251,7 +251,7 @@ const CreditsPage = () => {
       const balanceResponse = await apiService.credits.getBalance(user.id);
       setCreditBalance(balanceResponse.balance);
     } catch (error) {
-      console.error('Erro ao buscar saldo de créditos:', error);
+      console.error('Error fetching credit balance:', error);
       setCreditBalance(0);
     } finally {
       setBalanceLoaded(true);
@@ -273,12 +273,12 @@ const CreditsPage = () => {
         return;
       }
       
-      // Mapear transações para o formato necessário
+      // Map transactions to the required format
       const formattedTransactions = response.map((tx: CreditTransaction) => {
-        // Garantir formato de data válido
+        // Ensure valid date format
         let formattedDate = "Data indisponível";
         try {
-          // Verificar se a data é válida antes de formatá-la
+          // Check if the date is valid before formatting it
           const date = new Date(tx.created_at);
           if (!isNaN(date.getTime())) {
             formattedDate = new Intl.DateTimeFormat('pt-BR', { 
@@ -288,24 +288,24 @@ const CreditsPage = () => {
             }).format(date);
           }
         } catch (e) {
-          console.error('Erro ao formatar data:', e);
+          console.error('Error formatting date:', e);
         }
         
         return {
           date: formattedDate,
           amount: tx.amount,
-          status: tx.amount > 0 ? "Concluído" : "Utilizado",
+          status: tx.amount > 0 ? "Completed" : "Used",
           description: tx.description || 
-            (tx.type === 'purchase' ? `Compra de ${tx.package_size} créditos` : 
-             tx.type === 'usage' ? 'Utilização de serviço' : 
-             tx.type === 'monthly_free' ? 'Créditos mensais gratuitos' : 
-             tx.type === 'initial_free' ? 'Créditos iniciais gratuitos' : 
-             'Transação de créditos'),
+            (tx.type === 'purchase' ? `Purchase of ${tx.package_size} credits` : 
+             tx.type === 'usage' ? 'Service usage' : 
+             tx.type === 'monthly_free' ? 'Monthly free credits' : 
+             tx.type === 'initial_free' ? 'Initial free credits' : 
+             'Credit transaction'),
           transactionId: tx.id
         };
       });
       
-      // Ordenar por data mais recente primeiro
+      // Sort by most recent date first
       const sortedTransactions = formattedTransactions.sort((a, b) => {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       });
@@ -313,7 +313,7 @@ const CreditsPage = () => {
       setTransactions(sortedTransactions);
       
     } catch (error) {
-      console.error('Erro ao buscar histórico de transações:', error);
+      console.error('Error fetching transaction history:', error);
       setTransactions([]);
     } finally {
       setTransactionsLoaded(true);
@@ -329,10 +329,10 @@ const CreditsPage = () => {
         return;
       }
       
-      // Garantir que sempre teremos pacotes
+      // Ensure we always have packages
       setPackages(packagesResponse.prices.length > 0 ? packagesResponse.prices : defaultPackages);
     } catch (error) {
-      console.error('Erro ao buscar pacotes disponíveis:', error);
+      console.error('Error fetching available packages:', error);
       setPackages(defaultPackages);
     } finally {
       setPackagesLoaded(true);
@@ -356,20 +356,20 @@ const CreditsPage = () => {
         packageSize
       );
       
-      // Redireciona para a URL de checkout se disponível
+      // Redirect to the checkout URL if available
       if (checkoutResponse && checkoutResponse.url) {
         window.location.href = checkoutResponse.url;
       } else {
-        console.error("URL de checkout não encontrada na resposta");
+        console.error("Checkout URL not found in response");
       }
     } catch (error) {
-      console.error("Erro ao iniciar checkout:", error);
+      console.error("Error starting checkout:", error);
     } finally {
       setCheckoutLoading(null);
     }
   };
 
-  // Renderização condicional para Loading State
+  // Conditional rendering for loading state
   if (loading && !balanceLoaded && !packagesLoaded && !transactionsLoaded && !refreshing) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -378,8 +378,8 @@ const CreditsPage = () => {
     );
   }
 
-  // Formatar a data da última recarga
-  let lastRechargeDate = "Nenhuma";
+  // Format the last recharge date
+  let lastRechargeDate = "None";
   const lastRecharge = transactions.find(t => t.amount > 0);
   if (lastRecharge && lastRecharge.date && lastRecharge.date !== "Data indisponível") {
     lastRechargeDate = lastRecharge.date;
@@ -391,14 +391,14 @@ const CreditsPage = () => {
         {/* Header */}
         <div className="px-4 sm:px-8 py-6 sm:py-8 bg-primary-50 border-b border-gray-200">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">
-            Créditos
+            Credits
           </h1>
           <p className="text-gray-600 mt-2 text-sm sm:text-base text-center sm:text-left">
-            Gerencie seus créditos e realize recargas
+            Manage your credits and perform recharges
           </p>
         </div>
 
-        {/* Saldo */}
+        {/* Balance */}
         <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200 bg-white">
           <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
             <div className="flex items-center sm:items-start gap-4">
@@ -409,10 +409,10 @@ const CreditsPage = () => {
                 {balanceLoaded ? (
                   <>
                     <h2 className="font-semibold text-gray-900">
-                      Saldo Atual: <span className="text-primary-600">{creditBalance} créditos</span>
+                      Current balance: <span className="text-primary-600">{creditBalance} credits</span>
                     </h2>
                     <p className="text-gray-600 flex items-center justify-center sm:justify-start gap-2 text-sm">
-                      <Clock className="h-4 w-4" /> Atualizado em {new Date().toLocaleDateString('pt-BR')}
+                      <Clock className="h-4 w-4" /> Updated on {new Date().toLocaleDateString('pt-BR')}
                     </p>
                   </>
                 ) : (
@@ -430,24 +430,24 @@ const CreditsPage = () => {
                 className={`inline-flex items-center justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 text-sm ${refreshing ? 'opacity-50 cursor-not-allowed' : ''} w-full sm:w-auto`}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Atualizando...' : 'Atualizar'}
+                {refreshing ? 'Updating...' : 'Update'}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Pacotes de Créditos */}
+        {/* Credit packages */}
         <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200">
           <div className="mb-4 sm:mb-6">
             <h2 className="text-lg font-semibold text-gray-900 text-center sm:text-left">
-              Pacotes de Créditos
+              Credit packages
             </h2>
           </div>
           
           <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg mb-5 flex items-start sm:items-center gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5 sm:mt-0" />
             <p className="text-yellow-700 text-sm">
-              Clique diretamente em um dos pacotes abaixo para comprar e ser redirecionado ao checkout.
+              Click directly on one of the packages below to purchase and be redirected to the checkout.
             </p>
           </div>
 
@@ -463,7 +463,7 @@ const CreditsPage = () => {
                   />
                 ))
               ) : (
-                // Fallback para pacotes padrão caso o array esteja vazio
+                // Fallback for default packages if the array is empty
                 defaultPackages.map((pkg) => (
                   <CreditPackageCard 
                     key={pkg.size}
@@ -484,15 +484,15 @@ const CreditsPage = () => {
           <div className="mt-5 sm:mt-6 bg-blue-50 p-3 sm:p-4 rounded-lg">
             <p className="text-blue-700 text-sm flex items-start sm:items-center gap-2">
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5 sm:mt-0" />
-              <span>Após o pagamento, seus créditos serão adicionados automaticamente à sua conta e poderão ser usados imediatamente.</span>
+              <span>After payment, your credits will be automatically added to your account and can be used immediately.</span>
             </p>
           </div>
         </div>
 
-        {/* Histórico de Transações */}
+        {/* Transaction history */}
         <div className="px-4 sm:px-8 py-4 sm:py-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 text-center sm:text-left">
-            Histórico de Transações
+            Transaction history
           </h2>
           <div className="space-y-3 sm:space-y-4">
             {transactionsLoaded ? (
@@ -503,14 +503,14 @@ const CreditsPage = () => {
                     date={transaction.date}
                     amount={transaction.amount}
                     status={transaction.status}
-                    description={transaction.description || "Transação de crédito"}
+                    description={transaction.description || "Credit transaction"}
                     transactionId={transaction.transactionId || `tx-${index}`}
                   />
                 ))
               ) : (
                 <div className="text-center p-6 sm:p-8 text-gray-500 border border-dashed border-gray-300 rounded-lg">
                   <Coins className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                  <p>Nenhuma transação encontrada</p>
+                  <p>No transactions found</p>
                 </div>
               )
             ) : (
@@ -523,7 +523,7 @@ const CreditsPage = () => {
         </div>
       </div>
 
-      {/* Estatísticas */}
+      {/* Statistics */}
       <Suspense fallback={<div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 my-6 sm:my-8 animate-pulse">
         <div className="h-24 bg-gray-200 rounded-lg"></div>
         <div className="h-24 bg-gray-200 rounded-lg"></div>
@@ -531,13 +531,13 @@ const CreditsPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 my-6 sm:my-8 w-full max-w-4xl">
           <StatCard
             icon={Clock}
-            title="Última Recarga"
+            title="Last recharge"
             value={lastRechargeDate}
             type="info"
           />
           <StatCard
             icon={TrendingUp}
-            title="Total de Créditos"
+            title="Total credits"
             value={creditBalance || 0}
             type="success"
           />

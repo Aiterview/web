@@ -16,9 +16,9 @@ const UpdatePasswordForm = () => {
   const location = useLocation();
   const [sessionVerified, setSessionVerified] = useState(false);
 
-  // Debug: Mostrar URL e hash no console para troubleshooting
+  // Debug: Show URL and hash in console for troubleshooting
   useEffect(() => {
-    console.log('URL e parâmetros:', {
+    console.log('URL and parameters:', {
       pathname: location.pathname,
       search: location.search,
       hash: location.hash,
@@ -26,54 +26,54 @@ const UpdatePasswordForm = () => {
     });
   }, [location]);
 
-  // Verificar se temos um token de recuperação na URL
+  // Check if we have a recovery token in the URL
   useEffect(() => {
     const checkRecoveryToken = async () => {
       try {
         console.log("URL atual:", window.location.href);
         
-        // Extrair o token de recuperação (format #access_token=XXX)
+        // Extract the recovery token (format #access_token=XXX)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
         const type = hashParams.get('type');
         
-        // Verificar se temos tokens de acesso e tipo de recuperação
+        // Check if we have access tokens and recovery type
         if (accessToken && type === 'recovery') {
-          console.log("Token de recuperação encontrado na URL");
+          console.log("Recovery token found in URL");
           
-          // Configurar a sessão com o token de recuperação
+          // Configure the session with the recovery token
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken || '',
           });
           
           if (error) {
-            console.error("Erro ao configurar sessão de recuperação:", error);
-            setErrorMessage("Link de recuperação inválido. Por favor, solicite um novo link.");
+            console.error("Error configuring recovery session:", error);
+            setErrorMessage("Invalid recovery link. Please request a new link.");
           } else {
-            console.log("Sessão de recuperação configurada:", data);
-            // Limpar a URL para remover os parâmetros sensíveis
+            console.log("Recovery session configured:", data);
+            // Clear the URL to remove sensitive parameters
             window.history.replaceState({}, document.title, window.location.pathname);
             setSessionVerified(true);
           }
         } else if (isAuthenticated) {
-          // Se o usuário já está autenticado, permitir a atualização de senha
+          // If the user is already authenticated, allow password update
           setSessionVerified(true);
         } else {
-          console.log("Sem token de recuperação na URL ou usuário não autenticado");
+          console.log("No recovery token in URL or user not authenticated");
           navigate('/auth/login');
         }
       } catch (err) {
-        console.error("Erro ao verificar o token de recuperação:", err);
-        setErrorMessage("Erro ao verificar a sessão. Por favor, tente novamente.");
+        console.error("Error verifying recovery token:", err);
+        setErrorMessage("Error verifying session. Please try again.");
       }
     };
     
     checkRecoveryToken();
   }, [navigate, isAuthenticated]);
 
-  // Limpar erros do store ao montar
+  // Clear errors from the store when mounting
   useEffect(() => {
     setAuthError(null);
     return () => {
@@ -81,19 +81,19 @@ const UpdatePasswordForm = () => {
     };
   }, [setAuthError]);
 
-  // Atualizar mensagem de erro quando o authError mudar
+  // Update error message when authError changes
   useEffect(() => {
     if (authError) {
       setErrorMessage(authError);
     }
   }, [authError]);
 
-  // Atualizar a força da senha conforme o usuário digita
+  // Update password strength as the user types
   useEffect(() => {
     checkPasswordStrength(newPassword);
   }, [newPassword]);
 
-  // Validar força da senha
+  // Validate password strength
   const checkPasswordStrength = (password: string) => {
     if (password.length === 0) {
       setPasswordStrength(0);
@@ -126,31 +126,31 @@ const UpdatePasswordForm = () => {
   };
 
   const validateForm = (): boolean => {
-    // Limpar mensagens anteriores
+    // Clear previous messages
     setErrorMessage("");
 
     if (newPassword.length < 8) {
-      setErrorMessage("A senha deve ter pelo menos 8 caracteres.");
+      setErrorMessage("The password must be at least 8 characters long.");
       return false;
     }
     if (!/[A-Z]/.test(newPassword)) {
-      setErrorMessage("A senha deve conter pelo menos uma letra maiúscula.");
+      setErrorMessage("The password must contain at least one uppercase letter.");
       return false;
     }
     if (!/[a-z]/.test(newPassword)) {
-      setErrorMessage("A senha deve conter pelo menos uma letra minúscula.");
+      setErrorMessage("The password must contain at least one lowercase letter.");
       return false;
     }
     if (!/[0-9]/.test(newPassword)) {
-      setErrorMessage("A senha deve conter pelo menos um número.");
+      setErrorMessage("The password must contain at least one number.");
       return false;
     }
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
-      setErrorMessage("A senha deve conter pelo menos um caractere especial.");
+      setErrorMessage("The password must contain at least one special character.");
       return false;
     }
     if (newPassword !== confirmPassword) {
-      setErrorMessage("As senhas não coincidem.");
+      setErrorMessage("The passwords do not match.");
       return false;
     }
     return true;
@@ -160,7 +160,7 @@ const UpdatePasswordForm = () => {
     e.preventDefault();
     
     if (!sessionVerified) {
-      setErrorMessage("É necessária uma sessão válida para atualizar a senha.");
+      setErrorMessage("A valid session is required to update the password.");
       return;
     }
 
@@ -170,20 +170,20 @@ const UpdatePasswordForm = () => {
 
     try {
       await updatePassword(newPassword);
-      setSuccessMessage("Senha atualizada com sucesso! Redirecionando para login...");
-      // Resetar o formulário
+      setSuccessMessage("Password updated successfully! Redirecting to login...");
+      // Reset the form
       setNewPassword('');
       setConfirmPassword('');
       
-      // Redirecionar para o login após atualização bem-sucedida
+      // Redirect to login after successful update
       setTimeout(() => {
         navigate('/auth/login');
       }, 2000);
     } catch (err) {
-      console.error('Erro ao atualizar senha:', err);
-      // O erro principal já deve ter sido capturado pelo effect do authError
+      console.error('Error updating password:', err);
+      // The error should already have been captured by the authError effect
       if (!authError) {
-        setErrorMessage("Falha ao atualizar a senha. Por favor, tente novamente.");
+        setErrorMessage("Failed to update password. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -191,9 +191,9 @@ const UpdatePasswordForm = () => {
   };
 
   const getPasswordStrengthLabel = () => {
-    if (passwordStrength <= 1) return "Fraca";
-    if (passwordStrength <= 2) return "Média";
-    return "Forte";
+    if (passwordStrength <= 1) return "Weak";
+    if (passwordStrength <= 2) return "Medium";
+    return "Strong";
   };
 
   return (
@@ -204,9 +204,9 @@ const UpdatePasswordForm = () => {
             <BrainCog size={36} className="text-indigo-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Atualizar sua senha
+            Update your password
           </h2>
-          <p className="text-gray-600">Digite sua nova senha</p>
+          <p className="text-gray-600">Enter your new password</p>
         </div>
 
         {errorMessage && (
@@ -235,14 +235,14 @@ const UpdatePasswordForm = () => {
               htmlFor="new-password"
               className="block text-sm font-medium text-gray-700"
             >
-              Nova Senha
+              New Password
             </label>
             <input
               id="new-password"
               type="password"
               value={newPassword}
               onChange={handlePasswordChange}
-              placeholder="Digite sua nova senha"
+              placeholder="Enter your new password"
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
               disabled={isLoading || !!successMessage}
@@ -280,14 +280,14 @@ const UpdatePasswordForm = () => {
               htmlFor="confirm-password"
               className="block text-sm font-medium text-gray-700"
             >
-              Confirmar Senha
+              Confirm Password
             </label>
             <input
               id="confirm-password"
               type="password"
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
-              placeholder="Digite novamente sua senha"
+              placeholder="Enter your new password again"
               className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               required
               disabled={isLoading || !!successMessage}
@@ -302,7 +302,7 @@ const UpdatePasswordForm = () => {
          hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
          ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            {isLoading ? "Atualizando..." : "Atualizar Senha"}
+            {isLoading ? "Updating..." : "Update Password"}
           </button>
         </form>
       </div>

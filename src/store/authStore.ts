@@ -182,7 +182,7 @@ export const useAuthStore = create<IAuthState>()(
             error: null 
           });
         } catch (error) {
-          // Ainda limpamos o estado mesmo com erro para evitar problemas de sessão
+          // Even with error, we still clean the state to avoid session problems
           set({ 
             user: null, 
             isAuthenticated: false, 
@@ -337,7 +337,7 @@ export const useAuthStore = create<IAuthState>()(
           loadingStore.getState().setLoading(true);
           set({ error: null });
           
-          // Enviar o email com link para atualização de senha
+          // Send the email with the link to update the password
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/update-password`,
           });
@@ -360,29 +360,29 @@ export const useAuthStore = create<IAuthState>()(
           loadingStore.getState().setLoading(true);
           set({ error: null });
           
-          console.log('Atualizando senha...');
+          console.log('Updating password...');
           
-          // Verificar se temos uma sessão válida
+          // Check if we have a valid session
           const { data: sessionData } = await supabase.auth.getSession();
-          console.log('Sessão atual:', sessionData);
+          console.log('Current session:', sessionData);
           
-          // Atualizar a senha
+          // Update the password
           const { data, error } = await supabase.auth.updateUser({
             password: newPassword,
           });
           
           if (error) {
-            console.error('Erro ao atualizar senha:', error);
+            console.error('Error updating password:', error);
             set({ error: error.message });
             throw error;
           }
           
-          console.log('Senha atualizada com sucesso, usuário:', data.user);
+          console.log('Password updated successfully, user:', data.user);
           
-          // Limpar qualquer token de recuperação/verificação na sessão
+          // Clear any recovery/verification token in the session
           if (sessionData.session?.user?.aud === 'recovery') {
-            console.log('Fazendo logout após recuperação de senha');
-            // Depois de atualizar a senha, fazer logout para forçar um novo login com a nova senha
+            console.log('Logging out after password recovery');
+            // After updating the password, logout to force a new login with the new password
             await supabase.auth.signOut();
             set({ 
               user: null, 
@@ -412,22 +412,22 @@ export const useAuthStore = create<IAuthState>()(
   )
 );
 
-// Função auxiliar para determinar o provedor da autenticação
+// Helper function to determine the authentication provider
 function determineProvider(user: any): AuthProvider {
   if (!user) return AuthProvider.EMAIL;
   
-  // Verifica se há providers na app_metadata
+  // Check if there are providers in the app_metadata
   if (user.app_metadata?.providers?.length) {
     const providers = user.app_metadata.providers;
     
-    // Filtra 'email' se houver múltiplos providers
+    // Filter 'email' if there are multiple providers
     const cleanedProviders = providers.filter((p: string) => p !== 'email');
     
-    // Retorna o primeiro provider não-email, ou EMAIL se não houver outros
+    // Return the first non-email provider, or EMAIL if there are no others
     return (cleanedProviders.length > 0 ? cleanedProviders[0] : AuthProvider.EMAIL) as AuthProvider;
   }
   
-  // Verifica se há um provider específico definido
+  // Check if there is a specific provider defined
   if (user.app_metadata?.provider) {
     return user.app_metadata.provider as AuthProvider;
   }
@@ -435,10 +435,10 @@ function determineProvider(user: any): AuthProvider {
   return AuthProvider.EMAIL;
 }
 
-// Inicializar auth state quando o store é criado
+// Initialize auth state when the store is created
 useAuthStore.getState().initializeAuth();
 
-// Configurar listener para mudanças no estado de autenticação
+// Configure listener for authentication state changes
 supabase.auth.onAuthStateChange((event, session) => {
   if (session?.user) {
     const emailVerified = !!session.user.email_confirmed_at;
@@ -457,9 +457,9 @@ supabase.auth.onAuthStateChange((event, session) => {
       error: null
     });
     
-    // Configurar timer para renovar o token antes de expirar
+    // Configure timer to renew the token before it expires
     if (session.expires_at) {
-      const expiresInMs = (session.expires_at * 1000) - Date.now() - (60 * 1000); // 1 minuto antes
+      const expiresInMs = (session.expires_at * 1000) - Date.now() - (60 * 1000); // 1 minute before
       if (expiresInMs > 0) {
         setTimeout(() => {
           useAuthStore.getState().refreshSession();

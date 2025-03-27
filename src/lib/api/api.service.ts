@@ -133,61 +133,61 @@ export const apiService = {
     }
   },
   
-  // Módulo de Créditos
+  // Credits module
   credits: {
     /**
-     * Busca o saldo de créditos do usuário
+     * Search for the user's credit balance
      */
     getBalance: async (userId: string): Promise<CreditBalance> => {
       try {
         const response = await api.get(`/api/credits/balance/${userId}`);
         return response.data;
       } catch (error) {
-        console.error('Erro ao buscar saldo de créditos:', error);
-        // Retorna um objeto padrão com saldo zero
+        console.error('Error fetching credit balance:', error);
+        // Return a default object with zero balance
         return { balance: 0, userId };
       }
     },
 
     /**
-     * Busca o histórico de transações do usuário
+     * Search for the user's transaction history
      */
     getTransactions: async (userId: string, limit: number = 10, page: number = 1): Promise<CreditTransaction[]> => {
       try {
-        console.log(`Buscando transações para: /api/credits/transactions/${userId} com params: limit=${limit}, page=${page}`);
+        console.log(`Searching for transactions for: /api/credits/transactions/${userId} with params: limit=${limit}, page=${page}`);
         const response = await api.get(`/api/credits/transactions/${userId}`, {
           params: { limit, page }
         });
         
-        // Se a resposta for um array, retornar diretamente
+        // If the response is an array, return directly
         if (Array.isArray(response.data)) {
           return response.data;
         }
         
-        // Se a resposta for um objeto com um campo 'data', retornar esse campo
+        // If the response is an object with a 'data' field, return that field
         if (response.data && Array.isArray(response.data.data)) {
           return response.data.data;
         }
         
-        // Caso nenhum dos formatos seja encontrado, retornar um array vazio
-        console.error('Formato de resposta não reconhecido:', response.data);
+        // If no recognized format is found, return an empty array
+        console.error('Unrecognized response format:', response.data);
         return [];
       } catch (error) {
-        console.error('Erro ao buscar histórico de transações:', error);
+        console.error('Error fetching transaction history:', error);
         return [];
       }
     },
 
     /**
-     * Busca os pacotes disponíveis para compra
+     * Search for available packages for purchase
      */
     getPackages: async (): Promise<PackagesResponse> => {
       try {
         const response = await api.get('/api/credits/packages');
         return response.data;
       } catch (error) {
-        console.error('Erro ao buscar pacotes disponíveis:', error);
-        // Retorna pacotes padrão em caso de falha
+        console.error('Error fetching available packages:', error);
+        // Return default packages in case of failure
         const defaultPackages = [
           { size: 1, unitPrice: 1.00 },
           { size: 5, unitPrice: 4.50},
@@ -199,7 +199,7 @@ export const apiService = {
     },
 
     /**
-     * Cria uma sessão de checkout para compra de créditos
+     * Create a checkout session for credit purchase
      */
     createCheckoutSession: async (userId: string, customerEmail: string, packageSize: number): Promise<CheckoutResponse> => {
       try {
@@ -210,8 +210,8 @@ export const apiService = {
         });
         return response.data;
       } catch (error) {
-        console.error('Erro ao criar sessão de checkout:', error);
-        throw error; // Rejeita a promessa para que o componente possa lidar com o erro
+        console.error('Error creating checkout session:', error);
+        throw error; // Reject the promise so the component can handle the error
       }
     }
   },
