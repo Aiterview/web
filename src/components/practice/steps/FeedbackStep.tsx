@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, RefreshCw, Award, RotateCw } from 'lucide-react';
 import apiService from '../../../lib/api/api.service';
 import GenerateConfirmModal from '../../shared/GenerateConfirmModal';
-import { useUsageStore } from '../../../store/usageStore';
+import { useCredits } from '../../../context/CreditsContext';
 
 interface FeedbackStepProps {
   questions: string[];
@@ -24,7 +24,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const { usage, hasLimitReached, updateAfterGeneration } = useUsageStore();
+  const { credits, updateCreditsAfterUse } = useCredits();
 
   useEffect(() => {
     // Get feedback from API based on answers
@@ -293,7 +293,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
     setIsConfirmModalOpen(false);
     
     // Update usage before redirecting, to ensure the credit is counted
-    updateAfterGeneration();
+    updateCreditsAfterUse();
     
     // Redirect to new session
     onRetake();
@@ -309,12 +309,12 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         <h2 className="text-3xl font-bold text-gray-800 mb-4">Interview Feedback</h2>
         <p className="text-gray-600">Here's how you performed in your practice interview</p>
         
-        {/* Usage limit information */}
-        {usage && (
+        {/* Credits information */}
+        {credits && (
           <div className="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
             <p className="text-sm flex items-center">
-              <span className="font-medium mr-1">Créditos:</span> 
-              {usage.remaining} {usage.remaining === 1 ? 'crédito disponível' : 'créditos disponíveis'}
+              <span className="font-medium mr-1">Credits:</span> 
+              {credits.balance} {credits.balance === 1 ? 'credit available' : 'credits available'}
             </p>
           </div>
         )}
@@ -377,7 +377,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
                   text-indigo-600 hover:bg-indigo-50 transition-colors"
         >
           <RefreshCw className="h-5 w-5" />
-          <span>New Interview Topic</span>
+          <span>New interview topic</span>
         </button>
         
         <button
@@ -385,8 +385,8 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
           className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-8 py-3 rounded-lg
                    hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
                    hover:scale-105 active:scale-95"
-          disabled={hasLimitReached}
-          title={hasLimitReached ? "Monthly question generation limit reached" : ""}
+          disabled={!credits.hasCredits}
+          title={!credits.hasCredits ? "No credits available" : ""}
         >
           <RotateCw className="h-5 w-5" />
           <span>New Questions (Same Topic)</span>

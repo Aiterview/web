@@ -5,7 +5,7 @@ import QuestionsStep from './steps/QuestionsStep';
 import PracticeStep from './steps/PracticeStep';
 import FeedbackStep from './steps/FeedbackStep';
 import { checkApiConnection } from '../../lib/api/checkApiConnection';
-import { useUsageStore } from '../../store/usageStore';
+import { useCredits } from '../../context/CreditsContext';
 
 const PracticePage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -20,7 +20,7 @@ const PracticePage = () => {
   
   // Track whether this is a new practice session
   const [isNewSession, setIsNewSession] = useState(true);
-  const { fetchUsage } = useUsageStore();
+  const { fetchCredits } = useCredits();
 
   const steps = [
     { label: 'Job Type', component: JobTypeStep },
@@ -42,7 +42,8 @@ const PracticePage = () => {
     };
     
     verifyApiConnection();
-    fetchUsage();
+    fetchCredits();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // Track when a user completes the practice flow
@@ -94,8 +95,8 @@ const PracticePage = () => {
     setAnswers({});
     setIsNewSession(true);
     
-    // Refresh usage stats
-    fetchUsage();
+    // Refresh credits
+    fetchCredits();
   };
 
   const CurrentStepComponent = steps[currentStep].component;
@@ -113,7 +114,7 @@ const PracticePage = () => {
           <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300">
             <p className="font-medium">API Connection Issue</p>
             <p className="text-sm">{apiStatus.message}</p>
-            <p className="text-sm mt-1">Default questions will be used instead.</p>
+            <p className="text-sm mt-1">Default questions will be used.</p>
           </div>
         )}
       

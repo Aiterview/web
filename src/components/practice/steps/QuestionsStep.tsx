@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, MessageSquare, RotateCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
-import { useUsageStore } from '../../../store/usageStore';
+import { useCredits } from '../../../context/CreditsContext';
 import apiService from '../../../lib/api/api.service';
 import LimitReachedModal from '../../shared/LimitReachedModal';
 
@@ -35,7 +35,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuthStore();
-  const { usage, hasLimitReached, fetchUsage, setUsage, updateAfterGeneration } = useUsageStore();
+  const { credits, fetchCredits, updateCreditsAfterUse } = useCredits();
   const [hasGeneratedQuestions, setHasGeneratedQuestions] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [localApiCallInProgress, setLocalApiCallInProgress] = useState(false);
@@ -51,11 +51,19 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     };
   }, []);
   
-  // Fetch usage stats on component mount
+  // Fetch credits on component mount
   useEffect(() => {
     if (isAuthenticated) {
-      fetchUsage();
+      try {
+        fetchCredits();
+      } catch (error) {
+        console.error('Error fetching credits:', error);
+        // Permitir continuar mesmo com erro na API de créditos
+        setError('Erro ao verificar créditos. Continuando com perguntas padrão.');
+        setDefaultQuestions();
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps  
   }, [isAuthenticated]);
   
   const generateQuestions = async () => {
@@ -86,9 +94,9 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       return;
     }
     
-    // Check if usage limit is reached
-    if (hasLimitReached) {
-      setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
+    // Check if credits are available
+    if (!credits.hasCredits) {
+      setError('You do not have any credits available. Purchase more credits to continue.');
       setIsLimitModalOpen(true);
       return;
     }
@@ -111,7 +119,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     
     // Check if API is connected
     if (apiStatus && !apiStatus.isConnected) {
-      setError(`API connection issue: ${apiStatus.message}. Using default questions.`);
+      setError(`Problema de conexão com a API: ${apiStatus.message}. Usando perguntas padrão.`);
       setDefaultQuestions();
       setIsLoading(false);
       setLocalApiCallInProgress(false);
@@ -126,7 +134,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     
     // Check if user is authenticated
     if (!isAuthenticated) {
-      setError('Authentication required. Please log in again.');
+      setError('Autenticação necessária. Por favor, faça login novamente.');
       setDefaultQuestions();
       setIsLoading(false);
       setLocalApiCallInProgress(false);
@@ -168,31 +176,28 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           console.log('Questions array found directly in data:', result.data.questions.length);
           setQuestions(result.data.questions);
           setHasGeneratedQuestions(true);
+          // Update credits after consumption
+          updateCreditsAfterUse();
         } 
         // Check if there is a nested structure result.data.data.questions
         else if (result.data && result.data.data && result.data.data.questions && Array.isArray(result.data.data.questions)) {
           console.log('Questions array found in nested data:', result.data.data.questions.length);
           setQuestions(result.data.data.questions);
           setHasGeneratedQuestions(true);
+          // Update credits after consumption
+          updateCreditsAfterUse();
         }
         else {
           console.error('Response format changed: questions array not found in:', result.data);
-          setError('Invalid response format from server. Using default questions.');
+          setError('Formato de resposta inválido do servidor. Usando perguntas padrão.');
           setDefaultQuestions();
         }
         
-        // Try to get usage stats (can be in result.data.usage or result.data.data.usage)
-        if (result.data && result.data.usage) {
-          setUsage(result.data.usage);
-        } else if (result.data && result.data.data && result.data.data.usage) {
-          setUsage(result.data.data.usage);
-        } else {
-          // If no usage information came, update locally
-          updateAfterGeneration();
-        }
+        // Update credits after API returns successfully
+        fetchCredits();
       } else {
         console.error('Failed to generate questions:', result);
-        setError('Failed to generate questions. Please try again.');
+        setError('Falha ao gerar perguntas. Por favor, tente novamente.');
         setDefaultQuestions();
       }
     } catch (err: any) {
@@ -205,7 +210,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       
       // Check if error is due to limit reached
       if (err.response && err.response.status === 403 && err.response.data?.data?.limitReached) {
-        setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
+        setError('You do not have enough credits to generate questions. Purchase more credits to continue.');
         setIsLimitModalOpen(true);
         setHasGeneratedQuestions(true); // Prevent further attempts
       } else {
@@ -229,20 +234,20 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   
   const setDefaultQuestions = () => {
     const defaultQuestions = [
-      'Can you describe a challenging project you worked on and how you approached it?',
-      'How do you stay updated with the latest industry trends and technologies?',
-      'What is your approach to solving complex technical problems?',
-      'How do you handle disagreements with team members?',
-      'Where do you see yourself professionally in 5 years?',
+      'Pode descrever um projeto desafiador em que trabalhou e como você o abordou?',
+      'Como você se mantém atualizado com as tendências e tecnologias mais recentes do setor?',
+      'Qual é sua abordagem para resolver problemas técnicos complexos?',
+      'Como você lida com desacordos com membros da equipe?',
+      'Onde você se vê profissionalmente em 5 anos?',
     ];
     
     setQuestions(defaultQuestions);
     setHasGeneratedQuestions(true);
   };
 
-  // Use um debounce para a geração de perguntas via efeito
+  // Use a debounce for question generation via effect
   useEffect(() => {
-    // Evitar corrida de condição
+    // Avoid race condition
     let isMounted = true;
     let debounceTimeout: NodeJS.Timeout | null = null;
     
@@ -277,10 +282,10 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
 
   // Check limit when component mounts or when usage changes
   useEffect(() => {
-    if (hasLimitReached) {
-      setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
+    if (!credits.hasCredits) {
+      setError('You do not have any credits available. Purchase more credits to continue.');
     }
-  }, [hasLimitReached]);
+  }, [credits.hasCredits]);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -290,14 +295,14 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           <span className="text-sm font-medium text-indigo-600">Step 3 of 5</span>
         </div>
         <h2 className="text-3xl font-bold text-gray-800 mb-4">Interview Questions</h2>
-        <p className="text-gray-600">Review your personalized interview questions</p>
+        <p className="text-gray-600">Review your customized questions for the interview</p>
         
-        {/* Usage limit information */}
-        {usage && (
+        {/* Credits information */}
+        {credits && (
           <div className="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
             <p className="text-sm flex items-center">
-              <span className="font-medium mr-1">Créditos:</span> 
-              {usage.remaining} {usage.remaining === 1 ? 'credit available' : 'credits available'}
+              <span className="font-medium mr-1">Credits:</span> 
+              {credits.balance} {credits.balance === 1 ? 'credit available' : 'credits available'}
             </p>
           </div>
         )}
@@ -326,7 +331,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           <div className="animate-spin">
             <RotateCw className="h-10 w-10 text-indigo-600" />
           </div>
-          <p className="mt-4 text-gray-600">Generating personalized questions...</p>
+          <p className="mt-4 text-gray-600">Generating customized questions...</p>
         </div>
       ) : (
         <div className="space-y-4 mb-8">
@@ -368,7 +373,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
                    hover:scale-105 active:scale-95"
           disabled={isLoading || localApiCallInProgress || !questions || questions.length === 0}
         >
-          <span>Start Answering</span>
+          <span>Start answering</span>
           <ArrowRight className="h-5 w-5" />
         </button>
       </div>
