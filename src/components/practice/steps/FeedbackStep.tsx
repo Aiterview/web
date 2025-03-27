@@ -24,7 +24,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const { usage, hasLimitReached } = useUsageStore();
+  const { usage, hasLimitReached, updateAfterGeneration } = useUsageStore();
 
   useEffect(() => {
     // Get feedback from API based on answers
@@ -283,9 +283,20 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
     return 'Needs Improvement';
   };
 
-  // Manipulador de clique para nova prática com o mesmo cargo/requisitos
+  // Click handler for new practice with the same job/requirements
   const handleGenerateNewClick = () => {
     setIsConfirmModalOpen(true);
+  };
+  
+  // Click handler when the user confirms the generation of new questions
+  const handleConfirmNewGeneration = () => {
+    setIsConfirmModalOpen(false);
+    
+    // Update usage before redirecting, to ensure the credit is counted
+    updateAfterGeneration();
+    
+    // Redirect to new session
+    onRetake();
   };
 
   return (
@@ -301,17 +312,10 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         {/* Usage limit information */}
         {usage && (
           <div className="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
-            {usage.isPremium ? (
-              <p className="text-sm flex items-center">
-                <span className="font-medium mr-1">Premium Account:</span> Unlimited question generations
-              </p>
-            ) : (
-              <p className="text-sm flex items-center">
-                <span className="font-medium mr-1">Usage:</span> 
-                {usage.current} of {usage.limit} generations used this month 
-                ({usage.remaining} remaining)
-              </p>
-            )}
+            <p className="text-sm flex items-center">
+              <span className="font-medium mr-1">Créditos:</span> 
+              {usage.remaining} {usage.remaining === 1 ? 'crédito disponível' : 'créditos disponíveis'}
+            </p>
           </div>
         )}
       </div>
@@ -393,10 +397,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       <GenerateConfirmModal
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
-        onConfirm={() => {
-          setIsConfirmModalOpen(false);
-          onRetake();
-        }}
+        onConfirm={handleConfirmNewGeneration}
       />
     </div>
   );

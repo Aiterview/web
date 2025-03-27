@@ -13,7 +13,6 @@ import {
 export interface UsageStats {
   current: number;
   limit: number;
-  isPremium: boolean;
   remaining: number;
 }
 

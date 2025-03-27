@@ -33,10 +33,10 @@ const GenerateConfirmModal: React.FC<GenerateConfirmModalProps> = ({
           </div>
           <h3 className="text-xl font-bold text-gray-800">Generate New Questions?</h3>
           <p className="text-gray-600 mt-2">
-            This will consume 1 generation from your monthly limit
-            {usage && !usage.isPremium && (
-              <span className="block mt-1 font-medium">
-                You have {usage.remaining} generations remaining this month.
+            This action will consume 1 generation from your monthly limit
+            {usage && (
+              <span className="block mt-2 font-medium">
+                You have <span className="text-indigo-600">{usage.remaining}</span> {usage.remaining === 1 ? 'credit available' : 'credits available'}
               </span>
             )}
           </p>
@@ -45,7 +45,9 @@ const GenerateConfirmModal: React.FC<GenerateConfirmModalProps> = ({
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <p className="text-gray-700">
             Your current questions will be replaced with new AI-generated questions.
-            Your current questions will be lost.
+            <span className="block mt-1 text-amber-600 font-medium">
+              This will consume 1 generation and cannot be undone.
+            </span>
           </p>
         </div>
         
@@ -60,7 +62,7 @@ const GenerateConfirmModal: React.FC<GenerateConfirmModalProps> = ({
                      flex items-center justify-center space-x-2"
           >
             <RefreshCw className="w-5 h-5" />
-            <span>Confirm Generation</span>
+            <span>Confirm and spend 1 credit</span>
           </button>
           <button 
             onClick={onClose}

@@ -35,7 +35,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuthStore();
-  const { usage, hasLimitReached, fetchUsage, setUsage } = useUsageStore();
+  const { usage, hasLimitReached, fetchUsage, setUsage, updateAfterGeneration } = useUsageStore();
   const [hasGeneratedQuestions, setHasGeneratedQuestions] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
   const [localApiCallInProgress, setLocalApiCallInProgress] = useState(false);
@@ -186,6 +186,9 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           setUsage(result.data.usage);
         } else if (result.data && result.data.data && result.data.data.usage) {
           setUsage(result.data.data.usage);
+        } else {
+          // If no usage information came, update locally
+          updateAfterGeneration();
         }
       } else {
         console.error('Failed to generate questions:', result);
@@ -292,17 +295,10 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         {/* Usage limit information */}
         {usage && (
           <div className="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
-            {usage.isPremium ? (
-              <p className="text-sm flex items-center">
-                <span className="font-medium mr-1">Premium Account:</span> Unlimited question generations
-              </p>
-            ) : (
-              <p className="text-sm flex items-center">
-                <span className="font-medium mr-1">Usage:</span> 
-                {usage.current} of {usage.limit} generations used this month 
-                ({usage.remaining} remaining)
-              </p>
-            )}
+            <p className="text-sm flex items-center">
+              <span className="font-medium mr-1">Créditos:</span> 
+              {usage.remaining} {usage.remaining === 1 ? 'credit available' : 'credits available'}
+            </p>
           </div>
         )}
         
