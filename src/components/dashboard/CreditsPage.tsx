@@ -51,17 +51,17 @@ const CreditPackageCard: React.FC<{
       </h3>
       
       <p className={`text-center ${theme.textColor} font-bold text-2xl mt-2`}>
-        R$ {(unitPrice * size).toFixed(2)}
+        US$ {(unitPrice * size).toFixed(2)}
       </p>
       
       <p className="text-center text-gray-500 text-sm">
-        (R$ {unitPrice.toFixed(2)} per credit)
+        (US$ {unitPrice.toFixed(2)} per credit)
       </p>
       
       {size > 5 && (
         <div className="mt-2 mb-2">
           <p className="text-center text-sm bg-yellow-50 text-yellow-700 py-1 px-2 rounded-md">
-            Save {(((10.00 - unitPrice) / 10.00 * 100).toFixed(0))}% per credit
+            Save {(((1.00 - unitPrice) / 1.00 * 100).toFixed(0))}% per credit
           </p>
         </div>
       )}
