@@ -24,6 +24,31 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+// Request registry to prevent duplicates
+const requestRegistry = {
+  activeRequests: new Map<string, boolean>(),
+  
+  // Register an active request
+  registerRequest(endpoint: string, params: string): string {
+    const requestKey = `${endpoint}:${params}`;
+    console.log(`Registering API request: ${requestKey}`);
+    this.activeRequests.set(requestKey, true);
+    return requestKey;
+  },
+  
+  // Check if a request is already active
+  isRequestActive(endpoint: string, params: string): boolean {
+    const requestKey = `${endpoint}:${params}`;
+    return this.activeRequests.has(requestKey);
+  },
+  
+  // Clear a completed request
+  clearRequest(requestKey: string): void {
+    console.log(`Clearing API request: ${requestKey}`);
+    this.activeRequests.delete(requestKey);
+  }
+};
+
 // Create a base API instance
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
@@ -82,19 +107,42 @@ export const apiService = {
      */
     generate: async (jobType: string, requirements: string, numberOfQuestions: number = 5): Promise<ApiResponse<any>> => {
       try {
-        const response = await api.post('/api/questions/generate', {
-          jobType,
-          requirements,
-          numberOfQuestions
-        });
+        // Create a unique identifier for this request
+        const paramsDigest = JSON.stringify({ jobType, requirements, numberOfQuestions });
         
-        console.log('Raw API response:', response.data);
+        // Check if a duplicate request is already in progress
+        if (requestRegistry.isRequestActive('/api/questions/generate', paramsDigest)) {
+          console.warn('Duplicate question generation request detected and blocked');
+          return {
+            success: false,
+            status: 429, // Too Many Requests
+            error: 'A duplicate request is already in progress. Please wait.',
+          };
+        }
         
-        return {
-          success: true,
-          status: response.status,
-          data: response.data,
-        };
+        // Register this request
+        const requestKey = requestRegistry.registerRequest('/api/questions/generate', paramsDigest);
+        
+        try {
+          const response = await api.post('/api/questions/generate', {
+            jobType,
+            requirements,
+            numberOfQuestions,
+            // Add a nonce to ensure uniqueness of request on the backend
+            nonce: Date.now().toString() + Math.random().toString(36).substring(2, 15)
+          });
+          
+          console.log('Raw API response:', response.data);
+          
+          return {
+            success: true,
+            status: response.status,
+            data: response.data,
+          };
+        } finally {
+          // Clear the request registration when completed
+          requestRegistry.clearRequest(requestKey);
+        }
       } catch (error) {
         const axiosError = error as AxiosError;
         
@@ -239,26 +287,52 @@ export const apiService = {
      */
     analyze: async (interviewData: { questions: string[], answers: string[] }): Promise<ApiResponse<any>> => {
       try {
-        console.log('Sending feedback analysis request:', interviewData);
-        const response = await api.post('/api/feedback/analyze', interviewData);
+        // Create a unique identifier for this request
+        const paramsDigest = JSON.stringify(interviewData);
         
-        console.log('Raw feedback response:', response.data);
-        
-        // Validate the response format
-        if (!response.data || !response.data.success || !response.data.data) {
-          console.error('Invalid response format from feedback API:', response.data);
+        // Check if a duplicate request is already in progress
+        if (requestRegistry.isRequestActive('/api/feedback/analyze', paramsDigest)) {
+          console.warn('Duplicate feedback analysis request detected and blocked');
           return {
             success: false,
-            status: response.status,
-            error: 'Invalid response format from server',
+            status: 429, // Too Many Requests
+            error: 'A duplicate request is already in progress. Please wait.',
           };
         }
         
-        return {
-          success: true,
-          status: response.status,
-          data: response.data.data,
-        };
+        // Register this request
+        const requestKey = requestRegistry.registerRequest('/api/feedback/analyze', paramsDigest);
+        
+        try {
+          console.log('Sending feedback analysis request:', interviewData);
+          
+          const response = await api.post('/api/feedback/analyze', {
+            ...interviewData,
+            // Add a nonce to ensure uniqueness of request on the backend
+            nonce: Date.now().toString() + Math.random().toString(36).substring(2, 15)
+          });
+          
+          console.log('Raw feedback response:', response.data);
+          
+          // Validate the response format
+          if (!response.data || !response.data.success || !response.data.data) {
+            console.error('Invalid response format from feedback API:', response.data);
+            return {
+              success: false,
+              status: response.status,
+              error: 'Invalid response format from server',
+            };
+          }
+          
+          return {
+            success: true,
+            status: response.status,
+            data: response.data.data,
+          };
+        } finally {
+          // Clear the request registration when completed
+          requestRegistry.clearRequest(requestKey);
+        }
       } catch (error) {
         const axiosError = error as AxiosError;
         console.error('Error in feedback analysis:', axiosError);

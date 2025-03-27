@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, MessageSquare, RotateCw, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { useUsageStore } from '../../../store/usageStore';
 import apiService from '../../../lib/api/api.service';
 import LimitReachedModal from '../../shared/LimitReachedModal';
+
+// Global token to prevent multiple API calls
+let isApiCallInProgressGlobal = false;
 
 interface QuestionsStepProps {
   questions: string[];
@@ -35,7 +38,18 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   const { usage, hasLimitReached, fetchUsage, setUsage } = useUsageStore();
   const [hasGeneratedQuestions, setHasGeneratedQuestions] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
-  const [apiCallInProgress, setApiCallInProgress] = useState(false);
+  const [localApiCallInProgress, setLocalApiCallInProgress] = useState(false);
+  const apiCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const requestIdRef = useRef<string>("");
+  
+  // Clear timeout when unmounting
+  useEffect(() => {
+    return () => {
+      if (apiCallTimeoutRef.current) {
+        clearTimeout(apiCallTimeoutRef.current);
+      }
+    };
+  }, []);
   
   // Fetch usage stats on component mount
   useEffect(() => {
@@ -45,9 +59,24 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   }, [isAuthenticated]);
   
   const generateQuestions = async () => {
-    // Prevent simultaneous API calls
-    if (apiCallInProgress) {
-      console.log('API call already in progress, skipping...');
+    // Create a unique ID for this request
+    const currentRequestId = Date.now().toString();
+    requestIdRef.current = currentRequestId;
+    
+    // Triple protection against duplicate calls
+    // 1. Local state check
+    // 2. Global state check
+    // 3. Debounce to prevent rapid clicks
+    
+    // Check if there is a local call in progress
+    if (localApiCallInProgress) {
+      console.log('API call already in progress locally, skipping...');
+      return;
+    }
+    
+    // Check if there is a global call in progress
+    if (isApiCallInProgressGlobal) {
+      console.log('API call already in progress globally, skipping...');
       return;
     }
     
@@ -64,16 +93,34 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       return;
     }
     
+    // Set local and global locks
+    setLocalApiCallInProgress(true);
+    isApiCallInProgressGlobal = true;
+    
+    // Set timeout to release locks after 30 seconds (in case of error)
+    apiCallTimeoutRef.current = setTimeout(() => {
+      if (requestIdRef.current === currentRequestId) {
+        console.log('Safety timeout reached, releasing API call lock');
+        setLocalApiCallInProgress(false);
+        isApiCallInProgressGlobal = false;
+      }
+    }, 30000);
+    
     setIsLoading(true);
     setError(null);
-    setApiCallInProgress(true);
     
     // Check if API is connected
     if (apiStatus && !apiStatus.isConnected) {
       setError(`API connection issue: ${apiStatus.message}. Using default questions.`);
       setDefaultQuestions();
       setIsLoading(false);
-      setApiCallInProgress(false);
+      setLocalApiCallInProgress(false);
+      isApiCallInProgressGlobal = false;
+      
+      if (apiCallTimeoutRef.current) {
+        clearTimeout(apiCallTimeoutRef.current);
+      }
+      
       return;
     }
     
@@ -82,15 +129,34 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       setError('Authentication required. Please log in again.');
       setDefaultQuestions();
       setIsLoading(false);
-      setApiCallInProgress(false);
+      setLocalApiCallInProgress(false);
+      isApiCallInProgressGlobal = false;
+      
+      if (apiCallTimeoutRef.current) {
+        clearTimeout(apiCallTimeoutRef.current);
+      }
+      
       return;
     }
     
     try {
       console.log('Generating questions for:', jobType);
       console.log('With requirements:', requirements);
+      console.log('Request ID:', currentRequestId);
+      
+      // Ensure this is still the latest request
+      if (requestIdRef.current !== currentRequestId) {
+        console.log('Request superseded by newer request, aborting');
+        return;
+      }
       
       const result = await apiService.questions.generate(jobType, requirements, 5);
+      
+      // Verify again if this is still the latest request
+      if (requestIdRef.current !== currentRequestId) {
+        console.log('Request completed but superseded by newer request, discarding results');
+        return;
+      }
       
       console.log('API response:', JSON.stringify(result, null, 2));
       
@@ -129,6 +195,11 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     } catch (err: any) {
       console.error('Error generating questions:', err);
       
+      // Verify if this is still the latest request
+      if (requestIdRef.current !== currentRequestId) {
+        return;
+      }
+      
       // Check if error is due to limit reached
       if (err.response && err.response.status === 403 && err.response.data?.data?.limitReached) {
         setError('You have reached your monthly limit for generating questions. Upgrade to premium for unlimited access.');
@@ -139,8 +210,17 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         setDefaultQuestions();
       }
     } finally {
-      setIsLoading(false);
-      setApiCallInProgress(false);
+      // Clear timeout
+      if (apiCallTimeoutRef.current) {
+        clearTimeout(apiCallTimeoutRef.current);
+      }
+      
+      // Verify if this is still the latest request
+      if (requestIdRef.current === currentRequestId) {
+        setIsLoading(false);
+        setLocalApiCallInProgress(false);
+        isApiCallInProgressGlobal = false;
+      }
     }
   };
   
@@ -157,15 +237,40 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     setHasGeneratedQuestions(true);
   };
 
+  // Use um debounce para a geração de perguntas via efeito
   useEffect(() => {
-    if (jobType && requirements && isNewSession && !hasGeneratedQuestions && !apiCallInProgress) {
-      // Generate questions only once when the requirements and job type are available
-      // and it's a new session and the questions haven't been generated yet
-      generateQuestions();
+    // Evitar corrida de condição
+    let isMounted = true;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
+    const debouncedGenerate = () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      
+      debounceTimeout = setTimeout(() => {
+        if (isMounted && jobType && requirements && isNewSession && !hasGeneratedQuestions && !localApiCallInProgress && !isApiCallInProgressGlobal) {
+          console.log('Triggering debounced question generation');
+          generateQuestions();
+        }
+      }, 500); // 500ms debounce
+    };
+    
+    if (jobType && requirements && isNewSession && !hasGeneratedQuestions && !localApiCallInProgress && !isApiCallInProgressGlobal) {
+      console.log('Conditions met for question generation, debouncing...');
+      debouncedGenerate();
     } else if (!questions || questions.length === 0) {
       setDefaultQuestions();
     }
-  }, [jobType, requirements, isNewSession]);
+    
+    // Cleanup
+    return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
+  }, [jobType, requirements, isNewSession, hasGeneratedQuestions, localApiCallInProgress]);
 
   // Check limit when component mounts or when usage changes
   useEffect(() => {
@@ -200,6 +305,16 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
             )}
           </div>
         )}
+        
+        {/* API Call Status
+        {localApiCallInProgress && (
+          <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
+            <p className="text-sm flex items-center">
+              <span className="font-medium mr-1">API Status:</span> 
+              API call in progress. Please wait...
+            </p>
+          </div>
+        )} */}
         
         {/* Error message */}
         {error && (
@@ -244,7 +359,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           onClick={onBack}
           className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-300
                    hover:border-indigo-600 hover:text-indigo-600 transition-colors"
-          disabled={isLoading}
+          disabled={isLoading || localApiCallInProgress}
         >
           <ArrowLeft className="h-5 w-5" />
           <span>Back</span>
@@ -255,7 +370,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 rounded-lg
                    hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
                    hover:scale-105 active:scale-95"
-          disabled={isLoading || !questions || questions.length === 0}
+          disabled={isLoading || localApiCallInProgress || !questions || questions.length === 0}
         >
           <span>Start Answering</span>
           <ArrowRight className="h-5 w-5" />
