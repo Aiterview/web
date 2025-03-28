@@ -8,22 +8,27 @@ interface CreditsState {
   isLoading: boolean;
   error: string | null;
   hasCredits: boolean;
+  lastUpdated: number | null;
 }
 
 // Interface for the context
 interface CreditsContextType {
   credits: CreditsState;
-  fetchCredits: () => Promise<void>;
+  fetchCredits: (forceUpdate?: boolean) => Promise<void>;
   updateCreditsAfterUse: () => void;
   resetCredits: () => void;
 }
+
+// Cache expiration time in milliseconds (5 minutes)
+const CACHE_EXPIRATION_TIME = 5 * 60 * 1000;
 
 // Default values
 const defaultCreditsState: CreditsState = {
   balance: 0,
   isLoading: false,
   error: null,
-  hasCredits: false
+  hasCredits: false,
+  lastUpdated: null
 };
 
 // Creating the context
@@ -35,8 +40,18 @@ export const CreditsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const { user, isAuthenticated } = useAuthStore();
 
   // Function to fetch user credits
-  const fetchCredits = useCallback(async () => {
-    // Evitar múltiplas chamadas simultâneas
+  const fetchCredits = useCallback(async (forceUpdate = false) => {
+    // Check if the cached data is still valid
+    const cacheIsValid = credits.lastUpdated && 
+                        (Date.now() - credits.lastUpdated < CACHE_EXPIRATION_TIME);
+    
+    // If the cache is valid and we're not forcing an update, use the cached data
+    if (cacheIsValid && !forceUpdate) {
+      console.log('Using cached credits data, last updated:', new Date(credits.lastUpdated as number).toLocaleTimeString());
+      return;
+    }
+    
+    // Avoid multiple simultaneous calls
     if (credits.isLoading) {
       console.log('Credits fetch already in progress, skipping...');
       return;
@@ -50,12 +65,13 @@ export const CreditsProvider: React.FC<{ children: ReactNode }> = ({ children })
           balance: 0,
           isLoading: false,
           error: 'User not authenticated',
-          hasCredits: false
+          hasCredits: false,
+          lastUpdated: Date.now()
         });
         return;
       }
       
-      // Adicionar timeout para evitar chamadas infinitas
+      // Add timeout to avoid infinite calls
       const creditBalance = await Promise.race([
         apiService.credits.getBalance(user.id),
         new Promise<{ balance: 0, userId: string }>((_, reject) => 
@@ -67,10 +83,11 @@ export const CreditsProvider: React.FC<{ children: ReactNode }> = ({ children })
         balance: creditBalance.balance || 0,
         isLoading: false,
         error: null,
-        hasCredits: (creditBalance.balance || 0) > 0
+        hasCredits: (creditBalance.balance || 0) > 0,
+        lastUpdated: Date.now()
       });
       
-      console.log('Updated credits:', creditBalance.balance);
+      console.log('Updated credits:', creditBalance.balance, 'at', new Date().toLocaleTimeString());
       
     } catch (error) {
       console.error('Failed to fetch credits:', error);
@@ -78,10 +95,10 @@ export const CreditsProvider: React.FC<{ children: ReactNode }> = ({ children })
         ...prev,
         isLoading: false,
         error: 'Failed to fetch credit information',
-        balance: prev.balance // Mantém o balanço anterior em caso de erro
+        balance: prev.balance // Keep the previous balance in case of error
       }));
     }
-  }, [isAuthenticated, user?.id, credits.isLoading]);
+  }, [isAuthenticated, user?.id, credits.isLoading, credits.lastUpdated]);
 
   // Function to update credits after use
   const updateCreditsAfterUse = useCallback(() => {
@@ -90,7 +107,8 @@ export const CreditsProvider: React.FC<{ children: ReactNode }> = ({ children })
       return {
         ...prev,
         balance: newBalance,
-        hasCredits: newBalance > 0
+        hasCredits: newBalance > 0,
+        lastUpdated: Date.now() // Update the timestamp when credits are used
       };
     });
   }, []);
@@ -100,14 +118,14 @@ export const CreditsProvider: React.FC<{ children: ReactNode }> = ({ children })
     setCredits(defaultCreditsState);
   }, []);
 
-  // Fetch credits when the component mounts or when the user changes
+  // Fetch credits only when needed
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && (!credits.lastUpdated || credits.balance === 0)) {
       fetchCredits();
-    } else {
+    } else if (!isAuthenticated) {
       resetCredits();
     }
-  }, [isAuthenticated, user?.id, fetchCredits, resetCredits]);
+  }, [isAuthenticated, user?.id, fetchCredits, resetCredits, credits.lastUpdated, credits.balance]);
 
   // Context value
   const contextValue: CreditsContextType = {

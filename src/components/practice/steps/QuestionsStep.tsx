@@ -51,20 +51,21 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
     };
   }, []);
   
-  // Fetch credits on component mount
+  // Fetch credits on component mount only if needed
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && isNewSession) {
       try {
+        // Cache control implemented in fetchCredits
         fetchCredits();
       } catch (error) {
         console.error('Error fetching credits:', error);
-        // Permitir continuar mesmo com erro na API de créditos
-        setError('Erro ao verificar créditos. Continuando com perguntas padrão.');
+        // Allow continuing even with credit API error
+        setError('Error checking credits. Continuing with default questions.');
         setDefaultQuestions();
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps  
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isNewSession]);
   
   const generateQuestions = async () => {
     // Create a unique ID for this request
@@ -93,6 +94,10 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       console.log('Questions already generated, skipping...');
       return;
     }
+    
+    // Ensure you have updated credit data before generating questions
+    // Use forceUpdate=false to allow cache usage, avoiding unnecessary calls
+    await fetchCredits(false);
     
     // Check if credits are available
     if (!credits.hasCredits) {
@@ -189,15 +194,16 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
         }
         else {
           console.error('Response format changed: questions array not found in:', result.data);
-          setError('Formato de resposta inválido do servidor. Usando perguntas padrão.');
+          setError('Invalid server response format. Using default questions.');
           setDefaultQuestions();
         }
         
         // Update credits after API returns successfully
-        fetchCredits();
+        // Force credits update after consumption
+        fetchCredits(true);
       } else {
         console.error('Failed to generate questions:', result);
-        setError('Falha ao gerar perguntas. Por favor, tente novamente.');
+        setError('Failed to generate questions. Please try again.');
         setDefaultQuestions();
       }
     } catch (err: any) {
@@ -234,11 +240,11 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
   
   const setDefaultQuestions = () => {
     const defaultQuestions = [
-      'Pode descrever um projeto desafiador em que trabalhou e como você o abordou?',
-      'Como você se mantém atualizado com as tendências e tecnologias mais recentes do setor?',
-      'Qual é sua abordagem para resolver problemas técnicos complexos?',
-      'Como você lida com desacordos com membros da equipe?',
-      'Onde você se vê profissionalmente em 5 anos?',
+      'Can you describe a challenging project you worked on and how you approached it?',
+      'How do you stay updated with the latest trends and technologies in your industry?',
+      'What is your approach to solving complex technical problems?',
+      'How do you handle disagreements with team members?',
+      'Where do you see yourself professionally in 5 years?',
     ];
     
     setQuestions(defaultQuestions);
@@ -257,6 +263,8 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       }
       
       debounceTimeout = setTimeout(() => {
+        // Only generate automatically if it's a new session and never generated questions before
+        // isNewSession indicates first time on the screen and not returning to the screen later
         if (isMounted && jobType && requirements && isNewSession && !hasGeneratedQuestions && !localApiCallInProgress && !isApiCallInProgressGlobal) {
           console.log('Triggering debounced question generation');
           generateQuestions();
@@ -264,6 +272,7 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
       }, 500); // 500ms debounce
     };
     
+    // Only generate automatically if it's a new session and never generated questions before
     if (jobType && requirements && isNewSession && !hasGeneratedQuestions && !localApiCallInProgress && !isApiCallInProgressGlobal) {
       console.log('Conditions met for question generation, debouncing...');
       debouncedGenerate();

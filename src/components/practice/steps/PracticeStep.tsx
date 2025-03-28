@@ -247,14 +247,18 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
       </div>
 
       <div className="flex justify-between items-center">
-        <button
-          onClick={handleBack}
-          className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-300
-                   hover:border-indigo-600 hover:text-indigo-600 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span>Previous</span>
-        </button>
+        {currentQuestion > 0 ? (
+          <button
+            onClick={handleBack}
+            className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-300
+                     hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span>Previous</span>
+          </button>
+        ) : (
+          <div className='space-x-2 px-6 py-2'></div> // Empty div to keep the layout
+        )}
 
         <div className="flex space-x-2">
           {questions.map((_, index) => (

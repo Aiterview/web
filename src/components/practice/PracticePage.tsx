@@ -42,7 +42,8 @@ const PracticePage = () => {
     };
     
     verifyApiConnection();
-    fetchCredits();
+    // Fetch credits only on initialization, using cache when available
+    fetchCredits(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
@@ -95,8 +96,8 @@ const PracticePage = () => {
     setAnswers({});
     setIsNewSession(true);
     
-    // Refresh credits
-    fetchCredits();
+    // Force credits update when starting a new session
+    fetchCredits(true);
   };
 
   const CurrentStepComponent = steps[currentStep].component;
