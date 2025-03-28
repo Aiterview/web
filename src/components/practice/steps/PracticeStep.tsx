@@ -141,7 +141,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
           <Mic className="h-4 w-4 text-indigo-600 mr-2" />
           <span className="text-sm font-medium text-indigo-600">Step 4 of 5</span>
         </div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">Practice Your Interview</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-4 sm:text-2xl">Practice Your Interview</h2>
         <p className="text-gray-600">
           Question {currentQuestion + 1} of {questions ? questions.length : 0}
         </p>
@@ -161,10 +161,10 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
         </div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-sm mb-8">
+      <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 sm:p-4 shadow-sm mb-8">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl font-semibold text-gray-800">Question:</h3>
+            <h3 className="text-xl font-semibold text-gray-800 sm:text-lg">Question:</h3>
             <button
               onClick={togglePlayQuestion}
               className={`p-2 rounded-full transition-all ${
@@ -177,12 +177,12 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
               <Headphones className="h-5 w-5" />
             </button>
           </div>
-          <p className="text-gray-700 text-lg">{questions[currentQuestion]}</p>
+          <p className="text-gray-700 text-lg sm:text-base">{questions[currentQuestion]}</p>
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl font-semibold text-gray-800">Your Answer:</h3>
+            <h3 className="text-xl font-semibold text-gray-800 sm:text-lg">Your Answer:</h3>
             <div className="flex items-center">
               {savedStatus === "saving" && (
                 <span className="text-gray-500 text-sm mr-2">Saving...</span>
@@ -240,31 +240,39 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
           <div className="mt-2 text-xs text-right text-gray-500">
             {answers[currentQuestion]?.length || 0} characters
             {answers[currentQuestion]?.length > 0 && (
-              <span> · Press <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Shift</kbd> + <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Enter</kbd> for next question</span>
+              <span className="hidden sm:inline"> · Press <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Shift</kbd> + <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Enter</kbd> for next question</span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
-        {currentQuestion > 0 ? (
-          <button
-            onClick={handleBack}
-            className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-300
-                     hover:border-indigo-600 hover:text-indigo-600 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Previous</span>
-          </button>
-        ) : (
-          <div className='space-x-2 px-6 py-2'></div> // Empty div to keep the layout
-        )}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="w-full sm:w-auto">
+          {currentQuestion > 0 ? (
+            <button
+              onClick={handleBack}
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-300
+                       hover:border-indigo-600 hover:text-indigo-600 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Previous</span>
+            </button>
+          ) : (
+            <button
+              disabled={true}
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2 rounded-lg border-2 text-gray-200 border-gray-200"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Previous</span>
+            </button>
+          )}
+        </div>
 
-        <div className="flex space-x-2">
+        <div className="flex justify-center w-full sm:w-auto order-first sm:order-none mb-4 sm:mb-0">
           {questions.map((_, index) => (
             <button
               key={index}
-              className={`h-2 w-2 rounded-full transition-all ${
+              className={`h-2 w-2 mx-1 rounded-full transition-all ${
                 index === currentQuestion
                   ? 'bg-indigo-600 scale-125'
                   : answers[index]
@@ -277,22 +285,23 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
           ))}
         </div>
 
-        <button
-          onClick={handleNext}
-          disabled={!answers[currentQuestion]?.trim()}
-          className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 rounded-lg
-                   hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
-                   hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span>{questions && currentQuestion < questions.length - 1 ? 'Next Question' : 'Submit Answers'}</span>
-          <ArrowRight className="h-5 w-5" />
-        </button>
+        <div className="w-full sm:w-auto">
+          <button
+            onClick={handleNext}
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 rounded-lg
+                     hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
+                     hover:scale-105 active:scale-95"
+          >
+            <span>{questions && currentQuestion < questions.length - 1 ? 'Next Question' : 'Submit Answers'}</span>
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        </div>
       </div>
       
       {/* Tip to complete all questions */}
       {questions && currentQuestion === questions.length - 1 && !allQuestionsAnswered() && (
         <div className="mt-4 p-3 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" />
+          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
           <p className="text-sm">
             You haven't answered all questions yet. It's recommended to answer all questions for a more accurate feedback analysis.
           </p>
