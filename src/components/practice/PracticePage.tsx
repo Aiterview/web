@@ -127,6 +127,8 @@ const PracticePage = () => {
                 key={index}
                 className={`text-sm font-medium ${
                   index <= currentStep ? 'text-gray-800' : 'text-gray-400'
+                } ${
+                  index === currentStep ? 'block w-full text-center sm:w-auto sm:text-left' : 'hidden sm:block'
                 }`}
               >
                 {label}

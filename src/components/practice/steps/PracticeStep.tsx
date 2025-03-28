@@ -135,19 +135,19 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
+    <div className="max-w-2xl mx-auto text-center">
+      <div className="mb-8">
         <div className="inline-flex items-center px-4 py-2 rounded-full border border-indigo-200 bg-white/50 backdrop-blur-sm mb-4">
           <Mic className="h-4 w-4 text-indigo-600 mr-2" />
           <span className="text-sm font-medium text-indigo-600">Step 4 of 5</span>
         </div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-4 sm:text-2xl">Practice Your Interview</h2>
-        <p className="text-gray-600">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Practice Your Interview</h2>
+        <p className="text-sm sm:text-base text-gray-600 mb-2">
           Question {currentQuestion + 1} of {questions ? questions.length : 0}
         </p>
         
         {/* Progress bar */}
-        <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5">
+        <div className="mt-2 w-full bg-gray-200 rounded-full h-2.5">
           <div 
             className="bg-gradient-to-r from-indigo-600 to-violet-600 h-2.5 rounded-full transition-all duration-500"
             style={{ width: `${calculateProgress()}%` }}
@@ -217,7 +217,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
           
           {/* Real-time feedback */}
           {answerFeedback && (
-            <div className="mt-2 text-sm flex items-start">
+            <div className="mt-2 text-sm flex items-start justify-center">
               <AlertCircle className={`h-4 w-4 mr-1 ${
                 answers[currentQuestion]?.length < 50 
                   ? 'text-amber-500' 
@@ -237,17 +237,17 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
             </div>
           )}
           
-          <div className="mt-2 text-xs text-right text-gray-500">
+          <div className="mt-2 text-xs text-center text-gray-500">
             {answers[currentQuestion]?.length || 0} characters
             {answers[currentQuestion]?.length > 0 && (
-              <span className="hidden sm:inline"> · Press <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Shift</kbd> + <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Enter</kbd> for next question</span>
+              <span className="hidden sm:inline ml-2"> · Press <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Shift</kbd> + <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-300 rounded">Enter</kbd> for next question</span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div className="w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div className="w-full sm:w-auto flex justify-center">
           {currentQuestion > 0 ? (
             <button
               onClick={handleBack}
@@ -269,7 +269,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
         </div>
 
         <div className="flex justify-center w-full sm:w-auto order-first sm:order-none mb-4 sm:mb-0">
-          {questions.map((_, index) => (
+          {questions && questions.length > 1 && questions.map((_, index) => (
             <button
               key={index}
               className={`h-2 w-2 mx-1 rounded-full transition-all ${
@@ -285,7 +285,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
           ))}
         </div>
 
-        <div className="w-full sm:w-auto">
+        <div className="w-full sm:w-auto flex justify-center">
           <button
             onClick={handleNext}
             className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-6 py-3 rounded-lg
@@ -300,7 +300,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
       
       {/* Tip to complete all questions */}
       {questions && currentQuestion === questions.length - 1 && !allQuestionsAnswered() && (
-        <div className="mt-4 p-3 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 flex items-center">
+        <div className="mt-4 p-3 bg-amber-50 text-amber-700 rounded-lg border border-amber-200 flex items-center justify-center">
           <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
           <p className="text-sm">
             You haven't answered all questions yet. It's recommended to answer all questions for a more accurate feedback analysis.
