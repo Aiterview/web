@@ -366,10 +366,9 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
 
       <div className="flex justify-between items-center">
         <button
-          onClick={onBack}
-          className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-300
-                   hover:border-indigo-600 hover:text-indigo-600 transition-colors"
-          disabled={isLoading || localApiCallInProgress}
+          // onClick={onBack}
+          className="flex items-center space-x-2 px-6 py-2 rounded-lg border-2 border-gray-200 text-gray-200 cursor-not-allowed relative group"
+          disabled={true}
         >
           <ArrowLeft className="h-5 w-5" />
           <span>Back</span>
