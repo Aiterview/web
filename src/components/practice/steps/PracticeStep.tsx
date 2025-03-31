@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Mic, Headphones, Clock, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Mic, Headphones, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface PracticeStepProps {
   questions: string[];

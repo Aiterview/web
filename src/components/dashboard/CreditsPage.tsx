@@ -2,13 +2,11 @@ import React, { useState, useEffect, Suspense } from "react";
 import {
   CreditCard,
   Clock,
-  Shield,
   Coins,
   AlertCircle,
   Package,
   PlusCircle,
   RefreshCw,
-  MousePointer,
   Wallet,
   TrendingUp,
 } from "lucide-react";
@@ -87,7 +85,7 @@ const CreditTransaction: React.FC<ICreditTransactionProps> = ({
   amount,
   status,
   description,
-  transactionId,
+  //transactionId,
 }) => {
   // Security check for data
   const safeDate = date || "Data unavailable";
