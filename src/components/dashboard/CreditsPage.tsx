@@ -275,13 +275,14 @@ const CreditsPage = () => {
       
       // Map transactions to the required format
       const formattedTransactions = response.map((tx: CreditTransaction) => {
+
         // Ensure valid date format
-        let formattedDate = "Data indisponível";
+        let formattedDate = "Date unavailable";
         try {
           // Check if the date is valid before formatting it
-          const date = new Date(tx.created_at);
+          const date = new Date(tx.createdAt);
           if (!isNaN(date.getTime())) {
-            formattedDate = new Intl.DateTimeFormat('pt-BR', { 
+            formattedDate = new Intl.DateTimeFormat('en-US', { 
               day: '2-digit', 
               month: '2-digit',
               year: 'numeric'

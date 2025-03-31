@@ -14,7 +14,7 @@ export interface CreditTransaction {
   type: string;
   description: string;
   package_size?: number;
-  created_at: string;
+  createdAt: Date;
 }
 
 export interface TransactionsResponse {
