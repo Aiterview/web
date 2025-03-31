@@ -90,6 +90,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       const result = await apiService.feedback.analyze(interviewData);
       
       if (result.success && result.data) {
+        console.log('Feedback data received:', result.data);
         setFeedback(result.data);
       } else {
         setError('Failed to get feedback. Please try again later.');
@@ -115,12 +116,16 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         clearTimeout(apiCallTimeoutRef.current);
       }
       
-      // Verify if this is still the latest request
-      if (requestIdRef.current === currentRequestId) {
-        setIsLoading(false);
-        setLocalApiCallInProgress(false);
-        isApiCallInProgressGlobal = false;
-      }
+      // Add logs for debug
+      console.log('API call completed, current request ID:', requestIdRef.current);
+      console.log('Expected request ID:', currentRequestId);
+      console.log('Are IDs matching?', requestIdRef.current === currentRequestId);
+      
+      // Always update the state, regardless of the request ID
+      console.log('Setting isLoading to false');
+      setIsLoading(false);
+      setLocalApiCallInProgress(false);
+      isApiCallInProgressGlobal = false;
     }
   };
 
