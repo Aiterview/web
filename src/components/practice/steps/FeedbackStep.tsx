@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, RefreshCw, Award, RotateCw } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { CheckCircle, XCircle, RefreshCw, Award, RotateCw, BookOpen } from 'lucide-react';
 import apiService from '../../../lib/api/api.service';
 import GenerateConfirmModal from '../../shared/GenerateConfirmModal';
 import { useCredits } from '../../../context/CreditsContext';
@@ -17,7 +17,14 @@ interface FeedbackData {
   improvements: string[];
   overallAssessment: string;
   score: number;
+  learningResources?: Array<{
+    name: string;
+    url: string;
+  }>;
 }
+
+// Global state to prevent concurrent API calls
+let isApiCallInProgressGlobal = false;
 
 const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetake, jobType, requirements }) => {
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
@@ -25,12 +32,50 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
   const [error, setError] = useState<string | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const { credits, updateCreditsAfterUse } = useCredits();
+  
+  // Refs to manage API call state
+  const [localApiCallInProgress, setLocalApiCallInProgress] = useState(false);
+  const apiCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const requestIdRef = useRef<string>('');
 
   useEffect(() => {
     getFeedbackFromAPI();
   }, []);
 
   const getFeedbackFromAPI = async () => {
+    // Create a unique ID for this request
+    const currentRequestId = Date.now().toString();
+    requestIdRef.current = currentRequestId;
+    
+    // Triple protection against duplicate calls
+    // 1. Local state check
+    // 2. Global state check
+    
+    // Check if there is a local call in progress
+    if (localApiCallInProgress) {
+      console.log('API call already in progress locally, skipping...');
+      return;
+    }
+    
+    // Check if there is a global call in progress
+    if (isApiCallInProgressGlobal) {
+      console.log('API call already in progress globally, skipping...');
+      return;
+    }
+    
+    // Set local and global locks
+    setLocalApiCallInProgress(true);
+    isApiCallInProgressGlobal = true;
+    
+    // Set timeout to release locks after 30 seconds (in case of error)
+    apiCallTimeoutRef.current = setTimeout(() => {
+      if (requestIdRef.current === currentRequestId) {
+        console.log('Safety timeout reached, releasing API call lock');
+        setLocalApiCallInProgress(false);
+        isApiCallInProgressGlobal = false;
+      }
+    }, 30000);
+    
     setIsLoading(true);
     setError(null);
 
@@ -65,7 +110,17 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         score: 50
       });
     } finally {
-      setIsLoading(false);
+      // Clear timeout
+      if (apiCallTimeoutRef.current) {
+        clearTimeout(apiCallTimeoutRef.current);
+      }
+      
+      // Verify if this is still the latest request
+      if (requestIdRef.current === currentRequestId) {
+        setIsLoading(false);
+        setLocalApiCallInProgress(false);
+        isApiCallInProgressGlobal = false;
+      }
     }
   };
 
@@ -154,6 +209,33 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
               {feedback?.overallAssessment || "No assessment available."}
             </p>
           </div>
+          
+          {/* Learning Resources Section */}
+          {feedback?.learningResources && feedback.learningResources.length > 0 && (
+            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl shadow-sm border border-indigo-200 mb-8">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <BookOpen className="h-5 w-5 text-indigo-500 mr-2" />
+                Learning Resources
+              </h3>
+              <ul className="space-y-3">
+                {feedback.learningResources.map((resource, index) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <div className="flex-shrink-0 w-5 h-5 mt-1">
+                      <BookOpen className="h-5 w-5 text-indigo-500" />
+                    </div>
+                    <a 
+                      href={resource.url} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                    >
+                      {resource.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       ) : null}
 
