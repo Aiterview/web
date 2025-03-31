@@ -340,7 +340,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
           <div className="mb-8 flex justify-center">
             <div className="bg-white/70 backdrop-blur-sm shadow-sm rounded-full h-32 w-32 flex flex-col items-center justify-center border-4 border-indigo-100">
               <div className="text-2xl font-bold text-indigo-600">{feedback.score}%</div>
-              <div className="text-sm text-gray-600">{getScoreMessage(feedback.score)}</div>
+              <div className="text-sm text-gray-600 text-center">{getScoreMessage(feedback.score)}</div>
             </div>
           </div>
         
@@ -378,18 +378,6 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
         >
           <RefreshCw className="h-5 w-5" />
           <span>New interview topic</span>
-        </button>
-        
-        <button
-          onClick={handleGenerateNewClick}
-          className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-8 py-3 rounded-lg
-                   hover:from-indigo-700 hover:to-violet-700 transition-colors shadow-lg hover:shadow-xl
-                   hover:scale-105 active:scale-95"
-          disabled={!credits.hasCredits}
-          title={!credits.hasCredits ? "No credits available" : ""}
-        >
-          <RotateCw className="h-5 w-5" />
-          <span>New Questions (Same Topic)</span>
         </button>
       </div>
       

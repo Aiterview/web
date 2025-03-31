@@ -246,7 +246,7 @@ const PracticeStep: React.FC<PracticeStepProps> = ({ questions, answers, setAnsw
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="w-full sm:w-auto flex justify-center">
           {currentQuestion > 0 ? (
             <button
