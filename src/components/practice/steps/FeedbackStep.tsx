@@ -27,7 +27,6 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
   const { credits, updateCreditsAfterUse } = useCredits();
 
   useEffect(() => {
-    // Get feedback from API based on answers
     getFeedbackFromAPI();
   }, []);
 
@@ -45,233 +44,29 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       // Call API to analyze responses
       const result = await apiService.feedback.analyze(interviewData);
       
-      console.log('Feedback API response:', result);
-      
-      if (result.success) {
-        // Handle different response structures
-        let feedbackData = null;
-        
-        if (result.data && result.data.data) {
-          // Format: { success: true, data: { data: { strengths, improvements, ... } } }
-          feedbackData = result.data.data;
-        } else if (result.data) {
-          // Format: { success: true, data: { strengths, improvements, ... } }
-          feedbackData = result.data;
-        }
-        
-        // Validate the feedback data
-        if (feedbackData && Array.isArray(feedbackData.strengths) && Array.isArray(feedbackData.improvements)) {
-          setFeedback(feedbackData);
-        } else {
-          console.error('Invalid feedback data format:', feedbackData);
-          setError('Invalid feedback data received. Using local analysis instead.');
-          // Fallback to local analysis
-          generateLocalFeedback();
-        }
+      if (result.success && result.data) {
+        setFeedback(result.data);
       } else {
-        console.error('Failed to get feedback:', result);
-        setError('Failed to analyze your responses. Using local analysis instead.');
-        
-        // Fallback to local analysis if API fails
-        generateLocalFeedback();
+        setError('Failed to get feedback. Please try again later.');
+        setFeedback({
+          strengths: ['Answered all interview questions'],
+          improvements: ['Continue practicing to improve your responses'],
+          overallAssessment: 'Thank you for participating in the practice interview.',
+          score: 50
+        });
       }
     } catch (err) {
       console.error('Error getting feedback:', err);
-      setError('Error analyzing responses. Using local analysis instead.');
-      
-      // Fallback to local analysis if API fails
-      generateLocalFeedback();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Local fallback for feedback generation if API fails
-  const generateLocalFeedback = () => {
-    try {
-      // Analyze the responses
-      const strengths = analyzeStrengths(answers);
-      const improvements = analyzeImprovements(answers);
-      const overallAssessment = generateOverallAssessment(answers, strengths?.length || 0, improvements?.length || 0);
-      const score = calculateScore(answers, questions?.length || 0);
-
-      setFeedback({
-        strengths: strengths || [],
-        improvements: improvements || [],
-        overallAssessment: overallAssessment || "No assessment available.",
-        score: score || 0
-      });
-    } catch (error) {
-      console.error('Error generating local feedback:', error);
-      setError('Error generating local feedback. Please try again.');
-      
-      // Set default feedback
+      setError('Error analyzing responses. Please try again later.');
       setFeedback({
         strengths: ['Answered all interview questions'],
         improvements: ['Continue practicing to improve your responses'],
         overallAssessment: 'Thank you for participating in the practice interview.',
         score: 50
       });
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  // Analyze strengths in responses (local fallback)
-  const analyzeStrengths = (answers: Record<string, string>): string[] => {
-    const strengths = [];
-    
-    // Check for detailed responses (more than 100 characters)
-    if (Object.values(answers).some(answer => answer.length > 100)) {
-      strengths.push('Detailed and complete responses');
-    }
-    
-    // Check for specific examples
-    if (Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('example') || 
-      answer.toLowerCase().includes('project') || 
-      answer.toLowerCase().includes('case')
-    )) {
-      strengths.push('Provided concrete examples');
-    }
-    
-    // Check for technical terms
-    if (Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('technology') || 
-      answer.toLowerCase().includes('method') || 
-      answer.toLowerCase().includes('framework')
-    )) {
-      strengths.push('Good use of technical terminology');
-    }
-    
-    // Check for STAR structure (Situation, Task, Action, Result)
-    if (Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('situation') || 
-      answer.toLowerCase().includes('problem') || 
-      answer.toLowerCase().includes('action') || 
-      answer.toLowerCase().includes('result') || 
-      answer.toLowerCase().includes('solution')
-    )) {
-      strengths.push('Clear structure of responses (STAR method)');
-    }
-    
-    // Check for teamwork mentions
-    if (Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('team') || 
-      answer.toLowerCase().includes('collaboration') || 
-      answer.toLowerCase().includes('partnership')
-    )) {
-      strengths.push('Good focus on teamwork and collaboration');
-    }
-
-    // If no strengths found, add a generic one
-    if (strengths.length === 0) {
-      strengths.push('Ability to answer all questions');
-      strengths.push('Direct and simple communication');
-    }
-    
-    return strengths;
-  };
-
-  // Analyze areas for improvement (local fallback)
-  const analyzeImprovements = (answers: Record<string, string>): string[] => {
-    const improvements = [];
-    
-    // Check for very short responses (less than 50 characters)
-    if (Object.values(answers).some(answer => answer.length < 50)) {
-      improvements.push('Elaborate more on some of your answers with more details');
-    }
-    
-    // Check for lack of examples
-    if (!Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('example') || 
-      answer.toLowerCase().includes('project') || 
-      answer.toLowerCase().includes('case')
-    )) {
-      improvements.push('Include specific examples from previous experiences');
-    }
-    
-    // Check for lack of metrics
-    if (!Object.values(answers).some(answer => 
-      answer.includes('%') || 
-      answer.toLowerCase().includes('percentage') || 
-      /\d+(\.\d+)?/.test(answer) || 
-      answer.toLowerCase().includes('metric')
-    )) {
-      improvements.push('Add metrics and quantitative data');
-    }
-    
-    // Check for lack of result mentions
-    if (!Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('resulted') || 
-      answer.toLowerCase().includes('impact') || 
-      answer.toLowerCase().includes('consequence') || 
-      answer.toLowerCase().includes('outcome')
-    )) {
-      improvements.push('Emphasize more on the results and impact of your actions');
-    }
-    
-    // Check for lack of technical terminology
-    if (!Object.values(answers).some(answer => 
-      answer.toLowerCase().includes('technology') || 
-      answer.toLowerCase().includes('technique') || 
-      answer.toLowerCase().includes('method') || 
-      answer.toLowerCase().includes('framework')
-    )) {
-      improvements.push('Incorporate more relevant technical terminology');
-    }
-
-    // If no improvements found, add a generic one
-    if (improvements.length === 0) {
-      improvements.push('Consider structuring answers using the STAR method');
-      improvements.push('Mention more measurable achievements');
-    }
-    
-    return improvements;
-  };
-
-  // Generate overall assessment (local fallback)
-  const generateOverallAssessment = (answers: Record<string, string>, strengthCount: number, improvementCount: number): string => {
-    const avgLength = Object.values(answers).reduce((sum, answer) => sum + answer.length, 0) / Object.values(answers).length;
-    
-    // Determine assessment type based on analysis
-    if (avgLength > 150 && strengthCount > improvementCount) {
-      return 'Your responses demonstrate good communication skills and a solid understanding of your role. The use of specific examples and clear structure are strengths. Continue focusing on quantifying your achievements to make your answers even more impactful.';
-    } else if (avgLength > 100) {
-      return 'Your responses demonstrate knowledge of the subject, but could benefit from more details and concrete examples. Consider using the STAR method (Situation, Task, Action, Result) to structure your answers. This will help clearly demonstrate how you approach professional challenges.';
-    } else {
-      return 'Your responses provide a foundation, but need to be expanded with more details, specific examples, and measurable results. Try to demonstrate your experience and skills with concrete examples from previous projects or situations you faced at work.';
-    }
-  };
-
-  // Calculate overall score (local fallback)
-  const calculateScore = (answers: Record<string, string>, questionCount: number): number => {
-    // Verificar se há questões
-    if (!questionCount) {
-      return 0;
-    }
-    
-    // Scoring criteria
-    let score = 0;
-    
-    // Check completeness of answers
-    const answeredQuestions = Object.keys(answers).length;
-    score += (answeredQuestions / questionCount) * 100 * 0.5; // 50% of score for answering all questions
-    
-    // Check average length of responses (ideal between 100-200 characters)
-    const avgLength = answeredQuestions > 0 ? Object.values(answers).reduce((sum, answer) => sum + answer.length, 0) / answeredQuestions : 0;
-    const lengthScore = Math.min(100, (avgLength / 150) * 100);
-    score += lengthScore * 0.3; // 30% of score for appropriate length
-    
-    // Check for examples and technical terms
-    const containsExamples = Object.values(answers).filter(answer => 
-      answer.toLowerCase().includes('example') || 
-      answer.toLowerCase().includes('project') || 
-      answer.toLowerCase().includes('case')
-    ).length;
-    
-    const exampleScore = answeredQuestions > 0 ? (containsExamples / answeredQuestions) * 100 : 0;
-    score += exampleScore * 0.2; // 20% of score for using examples
-    
-    return Math.round(score);
   };
 
   // Get score message based on score
@@ -283,19 +78,10 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
     return 'Needs Improvement';
   };
 
-  // Click handler for new practice with the same job/requirements
-  const handleGenerateNewClick = () => {
-    setIsConfirmModalOpen(true);
-  };
-  
   // Click handler when the user confirms the generation of new questions
   const handleConfirmNewGeneration = () => {
     setIsConfirmModalOpen(false);
-    
-    // Update usage before redirecting, to ensure the credit is counted
     updateCreditsAfterUse();
-    
-    // Redirect to new session
     onRetake();
   };
 
@@ -321,11 +107,12 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       </div>
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="animate-spin">
-            <RotateCw className="h-10 w-10 text-indigo-600" />
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="animate-spin mb-4">
+            <RotateCw className="h-12 w-12 text-indigo-600" />
           </div>
-          <p className="mt-4 text-gray-600">Analyzing your responses...</p>
+          <p className="text-lg text-gray-600">Analyzing your responses...</p>
+          <p className="text-sm text-gray-500 mt-2">This may take a moment</p>
         </div>
       ) : feedback ? (
         <>
@@ -405,12 +192,16 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({ title, items = [], ic
     <ul className="space-y-3">
       {Array.isArray(items) && items.length > 0 ? items.map((item, index) => (
         <li key={index} className="flex items-start space-x-2">
-          {icon}
+          <div className="flex-shrink-0 w-5 h-5 mt-1">
+            {icon}
+          </div>
           <span className="text-gray-600">{item}</span>
         </li>
       )) : (
         <li className="flex items-start space-x-2">
-          {icon}
+          <div className="flex-shrink-0 w-5 h-5 mt-1">
+            {icon}
+          </div>
           <span className="text-gray-600">No information available</span>
         </li>
       )}

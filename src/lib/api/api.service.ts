@@ -286,52 +286,30 @@ export const apiService = {
      */
     analyze: async (interviewData: { questions: string[], answers: string[] }): Promise<ApiResponse<any>> => {
       try {
-        // Create a unique identifier for this request
-        const paramsDigest = JSON.stringify(interviewData);
+        console.log('Sending feedback analysis request:', interviewData);
         
-        // Check if a duplicate request is already in progress
-        if (requestRegistry.isRequestActive('/api/feedback/analyze', paramsDigest)) {
-          console.warn('Duplicate feedback analysis request detected and blocked');
-          return {
-            success: false,
-            status: 429, // Too Many Requests
-            error: 'A duplicate request is already in progress. Please wait.',
-          };
-        }
+        const response = await api.post('/api/feedback/analyze', {
+          ...interviewData,
+          // Add a nonce to ensure uniqueness of request on the backend
+          nonce: Date.now().toString() + Math.random().toString(36).substring(2, 15)
+        });
         
-        // Register this request
-        const requestKey = requestRegistry.registerRequest('/api/feedback/analyze', paramsDigest);
+        console.log('Raw feedback response:', response.data);
         
-        try {
-          console.log('Sending feedback analysis request:', interviewData);
-          
-          const response = await api.post('/api/feedback/analyze', {
-            ...interviewData,
-            // Add a nonce to ensure uniqueness of request on the backend
-            nonce: Date.now().toString() + Math.random().toString(36).substring(2, 15)
-          });
-          
-          console.log('Raw feedback response:', response.data);
-          
-          // Validate the response format
-          if (!response.data || !response.data.success || !response.data.data) {
-            console.error('Invalid response format from feedback API:', response.data);
-            return {
-              success: false,
-              status: response.status,
-              error: 'Invalid response format from server',
-            };
-          }
-          
+        // Simple response validation
+        if (response.data && response.data.success) {
           return {
             success: true,
             status: response.status,
-            data: response.data.data,
+            data: response.data.data || response.data,
           };
-        } finally {
-          // Clear the request registration when completed
-          requestRegistry.clearRequest(requestKey);
         }
+        
+        return {
+          success: false,
+          status: response.status || 500,
+          error: 'Invalid response from server',
+        };
       } catch (error) {
         const axiosError = error as AxiosError;
         console.error('Error in feedback analysis:', axiosError);
