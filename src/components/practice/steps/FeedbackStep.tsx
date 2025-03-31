@@ -17,7 +17,7 @@ interface FeedbackData {
   improvements: string[];
   overallAssessment: string;
   score: number;
-  learningResources?: Array<{
+  learningResources?: string[] | Array<{
     name: string;
     url: string;
   }>;
@@ -214,7 +214,6 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
           {feedback?.learningResources && feedback.learningResources.length > 0 && (
             <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-xl shadow-sm border border-indigo-200 mb-8">
               <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <BookOpen className="h-5 w-5 text-indigo-500 mr-2" />
                 Learning Resources
               </h3>
               <ul className="space-y-3">
@@ -223,14 +222,18 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
                     <div className="flex-shrink-0 w-5 h-5 mt-1">
                       <BookOpen className="h-5 w-5 text-indigo-500" />
                     </div>
-                    <a 
-                      href={resource.url} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-800 hover:underline"
-                    >
-                      {resource.name}
-                    </a>
+                    {typeof resource === 'string' ? (
+                      <span className="text-gray-600">{resource}</span>
+                    ) : (
+                      <a 
+                        href={resource.url} 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:text-indigo-800 hover:underline"
+                      >
+                        {resource.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
