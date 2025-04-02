@@ -87,20 +87,20 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto flex justify-center items-center p-12">
+      <div className="w-full max-w-4xl mx-auto flex justify-center items-center p-6">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
 
         {/* Edit Profile Modal */}
         {showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md mx-auto my-8">
               <div className="flex justify-between items-center p-4 border-b">
                 <h2 className="text-xl font-semibold">Edit Profile</h2>
                 <button 
@@ -111,7 +111,7 @@ const ProfilePage = () => {
                 </button>
               </div>
               
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[70vh]">
                 <div className="space-y-4">
                   {/* Name */}
                   <div>
@@ -203,18 +203,18 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 h-10"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={updating}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 h-10"
                   >
                     {updating ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -225,56 +225,56 @@ const ProfilePage = () => {
         )}
 
         {/* Cover Image */}
-        <div className="h-48 bg-gradient-to-r from-indigo-500 to-purple-500 relative" />
+        <div className="h-32 sm:h-48 bg-gradient-to-r from-indigo-500 to-purple-500 relative" />
 
         {/* Profile Info */}
-        <div className="px-8 pb-8">
-          <div className="flex justify-between items-end -mt-12">
+        <div className="px-4 sm:px-8 pb-6 sm:pb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end -mt-12 gap-4">
             <div className="relative">
               <img
                 src={userData.avatar_url || 'https://via.placeholder.com/128'}
                 alt="Profile"
-                className="w-32 h-32 rounded-xl border-4 border-white"
+                className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-4 border-white"
               />
               <button className="absolute bottom-2 right-2 p-1.5 bg-white rounded-lg shadow-sm hover:bg-gray-50">
                 <Camera className="h-4 w-4 text-gray-600" />
               </button>
             </div>
             <button 
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 w-full sm:w-auto mt-2 sm:mt-0"
               onClick={(e) => handleEdit(e)}
             >
               Edit Profile
             </button>
           </div>
 
-          <div className="mt-6">
-            <h1 className="text-2xl font-bold text-gray-900">{userData.full_name || 'Name not provided'}</h1>
-            <p className="text-gray-600">{userData.profession || 'Profession not provided'}</p>
+          <div className="mt-4 sm:mt-6">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{userData.full_name || 'Name not provided'}</h1>
+            <p className="text-gray-600 break-words">{userData.profession || 'Profession not provided'}</p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-gray-600">
-                <Mail className="h-5 w-5" />
-                <span>{userData.email || 'Email not provided'}</span>
+          <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-start sm:items-center gap-3 text-gray-600">
+                <Mail className="h-5 w-5 flex-shrink-0 mt-1 sm:mt-0" />
+                <span className="break-all">{userData.email || 'Email not provided'}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <Phone className="h-5 w-5" />
-                <span>{userData.phone || 'Phone not provided'}</span>
+              <div className="flex items-start sm:items-center gap-3 text-gray-600">
+                <Phone className="h-5 w-5 flex-shrink-0 mt-1 sm:mt-0" />
+                <span className="break-words">{userData.phone || 'Phone not provided'}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <MapPin className="h-5 w-5" />
-                <span>{userData.location || 'Location not provided'}</span>
+              <div className="flex items-start sm:items-center gap-3 text-gray-600">
+                <MapPin className="h-5 w-5 flex-shrink-0 mt-1 sm:mt-0" />
+                <span className="break-words">{userData.location || 'Location not provided'}</span>
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 text-gray-600">
-                <Briefcase className="h-5 w-5" />
-                <span>{userData.company || 'Company not provided'}</span>
+            <div className="space-y-3 sm:space-y-4 mt-2 sm:mt-0">
+              <div className="flex items-start sm:items-center gap-3 text-gray-600">
+                <Briefcase className="h-5 w-5 flex-shrink-0 mt-1 sm:mt-0" />
+                <span className="break-words">{userData.company || 'Company not provided'}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <Calendar className="h-5 w-5" />
+              <div className="flex items-start sm:items-center gap-3 text-gray-600">
+                <Calendar className="h-5 w-5 flex-shrink-0 mt-1 sm:mt-0" />
                 <span>Joined in {month} of {year}</span>
               </div>
             </div>
