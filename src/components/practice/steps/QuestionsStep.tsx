@@ -181,26 +181,18 @@ const QuestionsStep: React.FC<QuestionsStepProps> = ({
           console.log('Questions array found directly in data:', result.data.questions.length);
           setQuestions(result.data.questions);
           setHasGeneratedQuestions(true);
-          // Update credits after consumption
-          updateCreditsAfterUse();
         } 
         // Check if there is a nested structure result.data.data.questions
         else if (result.data && result.data.data && result.data.data.questions && Array.isArray(result.data.data.questions)) {
           console.log('Questions array found in nested data:', result.data.data.questions.length);
           setQuestions(result.data.data.questions);
           setHasGeneratedQuestions(true);
-          // Update credits after consumption
-          updateCreditsAfterUse();
         }
         else {
           console.error('Response format changed: questions array not found in:', result.data);
           setError('Invalid server response format. Using default questions.');
           setDefaultQuestions();
         }
-        
-        // Update credits after API returns successfully
-        // Force credits update after consumption
-        fetchCredits(true);
       } else {
         console.error('Failed to generate questions:', result);
         setError('Failed to generate questions. Please try again.');

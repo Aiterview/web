@@ -92,6 +92,7 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
       if (result.success && result.data) {
         console.log('Feedback data received:', result.data);
         setFeedback(result.data);
+        updateCreditsAfterUse();
       } else {
         setError('Failed to get feedback. Please try again later.');
         setFeedback({
@@ -141,7 +142,6 @@ const FeedbackStep: React.FC<FeedbackStepProps> = ({ questions, answers, onRetak
   // Click handler when the user confirms the generation of new questions
   const handleConfirmNewGeneration = () => {
     setIsConfirmModalOpen(false);
-    updateCreditsAfterUse();
     onRetake();
   };
 
