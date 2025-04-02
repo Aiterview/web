@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Camera, Mail, Phone, MapPin, Briefcase, Calendar, X } from 'lucide-react';
-import { getUserProfile, updateUserProfile } from '../../lib/supabase/supaseUser';
+import { getUserProfile, updateUserProfile, uploadAvatar } from '../../lib/supabase/supaseUser';
 
 const ProfilePage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -23,6 +23,8 @@ const ProfilePage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -79,6 +81,44 @@ const ProfilePage = () => {
       console.error('Error updating profile:', error);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+      if (file.size > MAX_FILE_SIZE) {
+        alert('The image is too large. The maximum size is 1MB.');
+        return;
+      }
+
+      setUploadingAvatar(true);
+      const response = await uploadAvatar(file);
+      if (response && response.data) {
+        setUserData(prev => ({
+          ...prev,
+          avatar_url: response.data.avatar_url
+        }));
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      if (error instanceof Error) {
+        alert(`Error uploading image: ${error.message}`);
+      } else {
+        alert('Error uploading image. Please try again.');
+      }
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -224,6 +264,15 @@ const ProfilePage = () => {
           </div>
         )}
 
+        {/* Hidden file input for avatar upload */}
+        <input 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+
         {/* Cover Image */}
         <div className="h-32 sm:h-48 bg-gradient-to-r from-indigo-500 to-purple-500 relative" />
 
@@ -234,10 +283,19 @@ const ProfilePage = () => {
               <img
                 src={userData.avatar_url || 'https://via.placeholder.com/128'}
                 alt="Profile"
-                className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-4 border-white"
+                className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl border-4 border-white object-cover"
               />
-              <button className="absolute bottom-2 right-2 p-1.5 bg-white rounded-lg shadow-sm hover:bg-gray-50">
-                <Camera className="h-4 w-4 text-gray-600" />
+              <button 
+                className="absolute bottom-2 right-2 p-1.5 bg-white rounded-lg shadow-sm hover:bg-gray-50"
+                onClick={handleAvatarClick}
+                disabled={uploadingAvatar}
+                title="Upload profile image (Max: 1MB)"
+              >
+                {uploadingAvatar ? (
+                  <div className="h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4 text-gray-600" />
+                )}
               </button>
             </div>
             <button 

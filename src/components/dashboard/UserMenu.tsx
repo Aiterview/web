@@ -6,12 +6,37 @@ import {
   HelpCircle,
   LogOut
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { getUserProfile } from '../../lib/supabase/supaseUser';
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { signOut } = useAuthStore();
+  const [userData, setUserData] = useState({
+    full_name: '',
+    email: '',
+    avatar_url: ''
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userResponse = await getUserProfile();
+        if (userResponse && userResponse.data) {
+          setUserData({
+            full_name: userResponse.data.full_name || '',
+            email: userResponse.data.email || '',
+            avatar_url: userResponse.data.avatar_url || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const menuItems = [
     { icon: User, label: 'Profile', path: '/dashboard/profile' },
@@ -27,17 +52,17 @@ const UserMenu = () => {
         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100"
       >
         <img
-          src="https://i.pravatar.cc/32"
+          src={userData.avatar_url || 'https://via.placeholder.com/32'}
           alt="User"
-          className="w-8 h-8 rounded-full"
+          className="w-8 h-8 rounded-full object-cover"
         />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2">
           <div className="px-4 py-3 border-b border-gray-100">
-            <p className="font-medium text-gray-800">John Doe</p>
-            <p className="text-sm text-gray-500">john@example.com</p>
+            <p className="font-medium text-gray-800">{userData.full_name || 'User'}</p>
+            <p className="text-sm text-gray-500">{userData.email || 'Email not available'}</p>
           </div>
 
           <div className="py-2">
