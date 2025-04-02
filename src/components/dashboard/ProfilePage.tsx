@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Camera, Mail, Phone, MapPin, Briefcase, Calendar } from 'lucide-react';
-import { getUserProfile } from '../../lib/supabase/supaseUser';
+import { Camera, Mail, Phone, MapPin, Briefcase, Calendar, X } from 'lucide-react';
+import { getUserProfile, updateUserProfile } from '../../lib/supabase/supaseUser';
 
 const ProfilePage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -14,7 +14,15 @@ const ProfilePage = () => {
     created_at: Date.now(),
     avatar_url: ''
   });
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone: '',
+    location: '',
+    profession: '',
+    company: ''
+  });
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -24,9 +32,16 @@ const ProfilePage = () => {
         
         if (userResponse && userResponse.data) {
           setUserData(userResponse.data);
+          setFormData({
+            full_name: userResponse.data.full_name || '',
+            phone: userResponse.data.phone || '',
+            location: userResponse.data.location || '',
+            profession: userResponse.data.profession || '',
+            company: userResponse.data.company || ''
+          });
         }
       } catch (error) {
-        console.error('Erro ao buscar dados do usuário:', error);
+        console.error('Error fetching user data:', error);
       } finally {
         setLoading(false);
       }
@@ -37,11 +52,35 @@ const ProfilePage = () => {
 
   const handleEdit = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault();
+    setShowEditModal(true);
+  };
 
-    if(!showEditModal) {
-      setShowEditModal(true);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setUpdating(true);
+      const response = await updateUserProfile(formData);
+      if (response && response.data) {
+        setUserData(prev => ({
+          ...prev,
+          ...response.data
+        }));
+        setShowEditModal(false);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    } finally {
+      setUpdating(false);
     }
-  }
+  };
 
   const month = new Date(userData.created_at).toLocaleString('en-US', { month: 'long' });
   const year = new Date(userData.created_at).getFullYear();
@@ -60,48 +99,129 @@ const ProfilePage = () => {
 
         {/* Edit Profile Modal */}
         {showEditModal && (
-         <div>
-          <div>
-            <span>Edit Profile</span>
-            {/*name */}
-            <EditsField
-              label='Full Name'
-              value={userData.full_name}
-              placeholder={userData.full_name || 'Enter full name'}
-            />
-            {/*Profession */}
-            <EditsField
-              label='Profession'
-              value={userData.profession}
-              placeholder={userData.profession || 'Enter profession'}
-            />
-            {/*email */}
-            <EditsField
-              label='Email Address'
-              value={userData.email}
-              placeholder={userData.email || 'Enter email'}
-              type='email'
-            />
-            {/*phone */}
-            <EditsField
-              label='Phone Number'
-              value={userData.phone}
-              placeholder={userData.phone || 'Enter phone number'}
-            />
-            {/*location */}
-            <EditsField
-              label='Location'
-              value={userData.location}
-              placeholder={userData.location || 'Enter location'}
-            />
-            {/*company */}
-            <EditsField
-              label='Company'
-              value={userData.company}
-              placeholder={userData.company || 'Enter company'}
-            />
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="text-xl font-semibold">Edit Profile</h2>
+                <button 
+                  onClick={() => setShowEditModal(false)}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <div className="space-y-4">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      placeholder="Your full name"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  
+                  {/* Profession */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Profession
+                    </label>
+                    <input
+                      type="text"
+                      name="profession"
+                      value={formData.profession}
+                      onChange={handleChange}
+                      placeholder="Your profession"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  
+                  {/* Email - Disabled as requested */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={userData.email}
+                      disabled
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 text-gray-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">The email cannot be changed</p>
+                  </div>
+                  
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="Your phone number"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  
+                  {/* Location */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      placeholder="Your location"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  
+                  {/* Company */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      name="company"
+                      value={formData.company}
+                      onChange={handleChange}
+                      placeholder="Your company"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {updating ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-         </div> 
         )}
 
         {/* Cover Image */}
@@ -129,33 +249,33 @@ const ProfilePage = () => {
           </div>
 
           <div className="mt-6">
-            <h1 className="text-2xl font-bold text-gray-900">{userData.full_name || 'No name provided'}</h1>
-            <p className="text-gray-600">{userData.profession || 'No profession provided'}</p>
+            <h1 className="text-2xl font-bold text-gray-900">{userData.full_name || 'Name not provided'}</h1>
+            <p className="text-gray-600">{userData.profession || 'Profession not provided'}</p>
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-gray-600">
                 <Mail className="h-5 w-5" />
-                <span>{userData.email || 'No email provided'}</span>
+                <span>{userData.email || 'Email not provided'}</span>
               </div>
               <div className="flex items-center gap-3 text-gray-600">
                 <Phone className="h-5 w-5" />
-                <span>{userData.phone || 'No phone provided'}</span>
+                <span>{userData.phone || 'Phone not provided'}</span>
               </div>
               <div className="flex items-center gap-3 text-gray-600">
                 <MapPin className="h-5 w-5" />
-                <span>{userData.location || 'No location provided'}</span>
+                <span>{userData.location || 'Location not provided'}</span>
               </div>
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-gray-600">
                 <Briefcase className="h-5 w-5" />
-                <span>{userData.company || 'No company provided'}</span>
+                <span>{userData.company || 'Company not provided'}</span>
               </div>
               <div className="flex items-center gap-3 text-gray-600">
                 <Calendar className="h-5 w-5" />
-                <span>Joined {month} {year}</span>
+                <span>Joined in {month} of {year}</span>
               </div>
             </div>
           </div>
